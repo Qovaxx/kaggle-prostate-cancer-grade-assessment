@@ -1,0 +1,28 @@
+version: '2.4'
+
+services:
+  prostate_cancer_grade_assessment:
+    image: ${IMAGE_NAME}
+    container_name: ${CONTAINER_NAME}
+    build:
+      context: ${PWD}
+      dockerfile: ${DOCKERFILE_PATH}
+      args:
+        - PROXY=192.168.234.6:3128
+        - DEBIAN_FRONTEND=noninteractive
+        - PROJECT_DIRPATH=${CONTAINER_PROJECT_DIRPATH}
+        - DOCKER_USER_NAME=${DOCKER_USER_NAME}
+        - DOCKER_USER_PASS=${DOCKER_USER_PASS}
+        - DOCKER_SSH_PORT=${DOCKER_SSH_PORT}
+    runtime: nvidia
+    restart: unless-stopped
+    ipc: host
+    shm_size: 16gb
+    tty: true
+    ports:
+      - ${HOST_SSH_PORT}:${DOCKER_SSH_PORT}
+    environment:
+      - DISPLAY=unix${DISPLAY}
+    volumes:
+      - ${PWD}:${CONTAINER_PROJECT_DIRPATH}
+      - /tmp/.X11-unix:/tmp/.X11-unix --privileged
