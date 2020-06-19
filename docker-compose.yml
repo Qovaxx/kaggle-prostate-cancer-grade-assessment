@@ -16,6 +16,8 @@ services:
         - DOCKER_SSH_PORT=${DOCKER_SSH_PORT}
     runtime: nvidia
     restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
     ipc: host
     shm_size: 16gb
     tty: true
@@ -26,3 +28,4 @@ services:
     volumes:
       - ${PWD}:${CONTAINER_PROJECT_DIRPATH}
       - /tmp/.X11-unix:/tmp/.X11-unix --privileged
+      - ~/.cache/torch:/root/.cache/torch/

@@ -22,6 +22,9 @@ exec: ## Run a bash in a running container
 	$(eval CONTAINER_NAME=$(call env_arg,CONTAINER_NAME))
 	nvidia-docker exec -it ${CONTAINER_NAME} bash
 
+compile-requirements: ## Compile requirements.txt
+	pip-compile ./requirements/requirements.in
+
 port-forwarding-to: ## Up and down a direct tunnel to the docker container
 	$(eval NAME=$(call env_arg,$(server)PW_NAME))
 	$(eval LOCAL_ADDR=$(call env_arg,$(server)PW_LOCAL_ADDR))
