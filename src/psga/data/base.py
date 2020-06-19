@@ -86,7 +86,6 @@ class BaseWriter(BaseDataStructure):
             pickle.dump(data, file_stream, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-
 class BaseDataAdapter(ABC):
 
     def __init__(self, path: str, writer: BaseWriter, verbose: bool = False) -> NoReturn:

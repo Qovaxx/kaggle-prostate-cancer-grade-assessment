@@ -324,3 +324,4 @@ fabric.properties
 .idea/vcs.xml
 /.idea/deployment.xml
 !/.env
+/.idea/codeStyles/codeStyleConfig.xml
