@@ -39,13 +39,13 @@ class TIFFWriter(BaseWriter):
                                                   tile=True, tile_width=self._tile_size, tile_height=self._tile_size,
                                                   rgbjpeg=False)
 
-        eda_path.parent.mkdir(parents=True, exist_ok=True)
-        Image.fromarray(record.eda).save(str(eda_path), quality=self._quality, subsampling=0)
+            eda_path.parent.mkdir(parents=True, exist_ok=True)
+            Image.fromarray(record.eda).save(str(eda_path), quality=self._quality, subsampling=0)
 
         attributes = asdict(record)
         attributes["image"] = self._to_relative(image_path)
         attributes["mask"] = self._to_relative(mask_path) if record.mask is not None else None,
-        attributes["eda"] = self._to_relative(eda_path)
+        attributes["eda"] = self._to_relative(eda_path) if record.eda is not None else None,
         return attributes
 
 

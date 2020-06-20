@@ -76,9 +76,9 @@ class BaseWriter(BaseDataStructure):
     def _put(self, record: Record) -> Dict[str, Any]:
         ...
 
-    def flush(self, path_template: str = "*/*") -> NoReturn:
+    def flush(self, count_samples_from: str = "*/*") -> NoReturn:
         attributes = [load_pickle(str(path)) for path in self._temp_path.iterdir()]
-        images_count = len(list(Path(self.data_path).rglob(path_template)))
+        images_count = len(list(Path(self.data_path).rglob(count_samples_from)))
         assert images_count == len(attributes), "Dimensions of data and attributes did not match"
         save_pickle(attributes, path=str(self.attributes_path))
         shutil.rmtree(self._temp_path)
