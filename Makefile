@@ -43,3 +43,6 @@ port-forwarding-to: ## Up and down a direct tunnel to the docker container
 	 	--remote-ssh=${REMOTE_SSH} \
 	 	--ssh-user=${SSH_USER} \
 	 	--command=$(command)
+
+pipeline:
+	python ./scripts/convert_data.py
