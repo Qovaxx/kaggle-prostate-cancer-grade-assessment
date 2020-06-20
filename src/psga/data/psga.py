@@ -1,5 +1,11 @@
-import os
 import io
+from pathlib import Path
+from functools import partial
+from multiprocessing import (
+    Pool,
+    Manager,
+    cpu_count
+)
 from typing import (
     Dict,
     NoReturn,
@@ -50,10 +56,11 @@ SEGMENTATION_MAP = {
 class PSGADataAdapter(BaseDataAdapter):
 
     def __init__(self, path: str, writer: BaseWriter, verbose: bool = False,
-                 layer: int = 0, crop_tissue_roi: bool = True) -> NoReturn:
+                 layer: int = 0, crop_tissue_roi: bool = True, processes: int = cpu_count()) -> NoReturn:
         super().__init__(path, writer, verbose)
         self._layer = layer
         self._crop_tissue_roi = crop_tissue_roi
+        self._processes = processes
 
     def get_classname_map(self, data_provider: str) -> Dict[int, str]:
         return {k: v[0] for k, v in SEGMENTATION_MAP[data_provider].items()}
@@ -63,49 +70,60 @@ class PSGADataAdapter(BaseDataAdapter):
         return {k: normalize_it(v[1]) for k, v in SEGMENTATION_MAP[data_provider].items()}
 
     def convert(self) -> NoReturn:
-        to_paths = lambda path: sorted([str(x) for x in path.rglob("*")])
-        train_meta = pd.read_csv(self._path / "train.csv")
+        to_paths = lambda path: sorted(path.rglob("*"))
         image_paths = to_paths(self._path / "train_images")
         mask_paths = to_paths(self._path / "train_label_masks")
+        mask_path_map = {x.stem.replace("_mask", ""): x for x in mask_paths}
+        paths = [(x, mask_path_map.get(x.stem, None)) for x in image_paths][:10]
 
-        iter = image_paths[:10] #[117:119]
-        if self._verbose:
-            iter = tqdm(iter, total=len(iter), desc="Converted: ")
+        train_meta = pd.read_csv(self._path / "train.csv")
+        namespace = Manager().Namespace()
+        namespace.train_meta = train_meta
+        namespace.self = self
 
-        for image_path in iter:
-            name = os.path.splitext(os.path.basename(image_path))[0]
-            mask_path = image_path.replace("train_images", "train_label_masks").replace(".tiff", "_mask.tiff")
+        with Pool(self._processes) as p:
+            run = lambda x: list(tqdm(x, total=len(paths), desc="Converted: ")) if self._verbose else lambda x: x
+            run(p.imap(partial(self._worker, namespace=namespace), paths))
 
-            image = MultiImage(image_path)[self._layer]
-            mask = MultiImage(mask_path)[self._layer][..., 0] if mask_path in mask_paths else None
-            if self._crop_tissue_roi:
-                if mask is None:
-                    image, _ = crop_tissue_roi(image)
-                else:
-                    image, additional_images = crop_tissue_roi(image, additional_images=[mask])
-                    mask = additional_images[0]
-
-            row = train_meta[train_meta.image_id == name].iloc[0]
-            data_provider = row["data_provider"]
-            gleason_score = row["gleason_score"]
-            label = row["isup_grade"]
-            additional = {"data_provider": data_provider,
-                          "gleason_score": gleason_score,
-                          "image_shape": image.shape[:2]}
-
-            if mask is None:
-                eda = None
-            else:
-                masked = draw_overlay_mask(image, mask, color_map=self.get_color_map(data_provider, normalized=False))
-                title_text = f"{data_provider} - id={name[:10]} isup={label} gleason={gleason_score}"
-                eda = self._to_eda(masked, title_text,
-                                   color_map=self.get_color_map(data_provider, normalized=True),
-                                   classname_map=self.get_classname_map(data_provider),
-                                   show_keys=list(np.unique(mask)))
-
-            record = Record(image, mask, eda, name, label, phase=Phase.TRAIN, additional=additional)
-            self._writer.put(record)
         self._writer.flush(path_template="images/*/*")
+
+    @staticmethod
+    def _worker(paths: Tuple[Path, Optional[Path]], namespace) -> NoReturn:
+        self = namespace.self
+        train_meta = namespace.train_meta
+        image_path, mask_path = paths
+        name = image_path.stem
+        mask_path = str(image_path).replace("train_images", "train_label_masks").replace(".tiff", "_mask.tiff")
+
+        image = MultiImage(str(image_path))[self._layer]
+        mask = MultiImage(mask_path)[self._layer][..., 0] if mask_path else None
+        if self._crop_tissue_roi:
+            if mask is None:
+                image, _ = crop_tissue_roi(image)
+            else:
+                image, additional_images = crop_tissue_roi(image, additional_images=[mask])
+                mask = additional_images[0]
+
+        row = train_meta[train_meta.image_id == name].iloc[0]
+        data_provider = row["data_provider"]
+        gleason_score = row["gleason_score"]
+        label = row["isup_grade"]
+        additional = {"data_provider": data_provider,
+                      "gleason_score": gleason_score,
+                      "image_shape": image.shape[:2]}
+
+        if mask is None:
+            eda = None
+        else:
+            masked = draw_overlay_mask(image, mask, color_map=self.get_color_map(data_provider, normalized=False))
+            title_text = f"{data_provider} - id={name[:10]} isup={label} gleason={gleason_score}"
+            eda = self._to_eda(masked, title_text,
+                               color_map=self.get_color_map(data_provider, normalized=True),
+                               classname_map=self.get_classname_map(data_provider),
+                               show_keys=list(np.unique(mask)))
+
+        record = Record(image, mask, eda, name, label, phase=Phase.TRAIN, additional=additional)
+        self._writer.put(record)
 
     @staticmethod
     def _to_eda(image: np.ndarray, title_text: str,
