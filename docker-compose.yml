@@ -25,6 +25,10 @@ services:
       - ${HOST_SSH_PORT}:${DOCKER_SSH_PORT}
     environment:
       - DISPLAY=unix${DISPLAY}
+      - PROJECT_DIRPATH=${CONTAINER_PROJECT_DIRPATH}
+      - RAW_DIRPATH=${CONTAINER_RAW_DIRPATH}
+      - PROCESSED_DIRPATH=${CONTAINER_PROCESSED_DIRPATH}
+      - ARTIFACTS_DIRPATH=${CONTAINER_ARTIFACTS_DIRPATH}
     volumes:
       - ${PWD}:${CONTAINER_PROJECT_DIRPATH}
       - /tmp/.X11-unix:/tmp/.X11-unix --privileged

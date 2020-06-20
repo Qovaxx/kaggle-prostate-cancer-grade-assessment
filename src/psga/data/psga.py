@@ -4,7 +4,6 @@ from functools import partial
 from multiprocessing import (
     Pool,
     Manager,
-    cpu_count
 )
 from typing import (
     Dict,
@@ -56,11 +55,12 @@ SEGMENTATION_MAP = {
 class PSGADataAdapter(BaseDataAdapter):
 
     def __init__(self, path: str, writer: BaseWriter, verbose: bool = False,
-                 layer: int = 0, crop_tissue_roi: bool = True, processes: int = cpu_count()) -> NoReturn:
+                 layer: int = 0, crop_tissue_roi: bool = True, ) -> NoReturn:
         super().__init__(path, writer, verbose)
         self._layer = layer
         self._crop_tissue_roi = crop_tissue_roi
-        self._processes = processes
+        self._mp_namespace = Manager().Namespace()
+        self._mp_namespace.self = self
 
     def get_classname_map(self, data_provider: str) -> Dict[int, str]:
         return {k: v[0] for k, v in SEGMENTATION_MAP[data_provider].items()}
@@ -69,21 +69,19 @@ class PSGADataAdapter(BaseDataAdapter):
         normalize_it = lambda x: tuple(np.asarray(x) / 255) if normalized else x
         return {k: normalize_it(v[1]) for k, v in SEGMENTATION_MAP[data_provider].items()}
 
-    def convert(self) -> NoReturn:
+    def convert(self, processes: int = 1) -> NoReturn:
         to_paths = lambda path: sorted(path.rglob("*"))
         image_paths = to_paths(self._path / "train_images")
         mask_paths = to_paths(self._path / "train_label_masks")
         mask_path_map = {x.stem.replace("_mask", ""): x for x in mask_paths}
-        paths = [(x, mask_path_map.get(x.stem, None)) for x in image_paths][:10]
+        paths = [(x, mask_path_map.get(x.stem, None)) for x in image_paths]
 
         train_meta = pd.read_csv(self._path / "train.csv")
-        namespace = Manager().Namespace()
-        namespace.train_meta = train_meta
-        namespace.self = self
+        self._mp_namespace.train_meta = train_meta
 
-        with Pool(self._processes) as p:
+        with Pool(processes) as p:
             run = lambda x: list(tqdm(x, total=len(paths), desc="Converted: ")) if self._verbose else lambda x: x
-            run(p.imap(partial(self._worker, namespace=namespace), paths))
+            run(p.imap(partial(self._worker, namespace=self._mp_namespace), paths))
 
         self._writer.flush(path_template="images/*/*")
 
