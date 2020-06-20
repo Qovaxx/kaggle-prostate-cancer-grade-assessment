@@ -1,4 +1,4 @@
-import pickle
+import shutil
 from abc import (
     abstractmethod,
     ABC
@@ -6,11 +6,16 @@ from abc import (
 from typing import (
     Any,
     Callable,
+    Dict,
     NoReturn,
 )
 from pathlib import Path
 
 from .record import Record
+from ..utils import (
+    save_pickle,
+    load_pickle
+)
 
 
 def add_method_call(method_name: str) -> Callable:
@@ -58,19 +63,25 @@ class BaseWriter(BaseDataStructure):
         super().__init__(path)
         self._dirs_exist = False
         self._attributes = list()
+        self._temp_path = Path(self.root_path / "temp")
 
     @add_method_call("init_directories")
-    def put(self, *args, **kwargs) -> NoReturn:
-        return self._put(*args, **kwargs)
+    def put(self, record: Record):
+        tmp_pickle_path = (self._temp_path / record.name).with_suffix(".pkl")
+        if not tmp_pickle_path.exists():
+            attributes = self._put(record)
+            save_pickle(attributes, path=str(tmp_pickle_path))
 
     @abstractmethod
-    def _put(self, record: Record) -> NoReturn:
+    def _put(self, record: Record) -> Dict[str, Any]:
         ...
 
     def flush(self, path_template: str = "*/*") -> NoReturn:
+        attributes = [load_pickle(str(path)) for path in self._temp_path.iterdir()]
         images_count = len(list(Path(self.data_path).rglob(path_template)))
-        assert images_count == len(self._attributes), "Dimensions of data and attributes did not match"
-        self._save_pickle(data=self._attributes, path=str(self.attributes_path))
+        assert images_count == len(attributes), "Dimensions of data and attributes did not match"
+        save_pickle(attributes, path=str(self.attributes_path))
+        shutil.rmtree(self._temp_path)
 
     def init_directories(self) -> NoReturn:
         if not self._dirs_exist:
@@ -78,12 +89,12 @@ class BaseWriter(BaseDataStructure):
             self.images_path.mkdir(exist_ok=True)
             self.masks_path.mkdir(exist_ok=True)
             self.eda_path.mkdir(exist_ok=True)
+            self._temp_path.mkdir(exist_ok=True)
             self._dirs_exist = True
 
     @staticmethod
-    def _save_pickle(data: Any, path: str) -> NoReturn:
-        with open(path, "wb") as file_stream:
-            pickle.dump(data, file_stream, protocol=pickle.HIGHEST_PROTOCOL)
+    def _to_relative(path: Path) -> str:
+        return str(path.relative_to(path.parent.parent.parent))
 
 
 class BaseDataAdapter(ABC):
