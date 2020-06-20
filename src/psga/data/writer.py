@@ -16,7 +16,7 @@ from ..vips import from_numpy
 
 class TIFFWriter(BaseWriter):
 
-    def __init__(self, path: str, quality: int = 90, tile_size: int = 512, ) -> NoReturn:
+    def __init__(self, path: str, quality: int = 90, tile_size: int = 512) -> NoReturn:
         super().__init__(path)
         self._quality = quality
         self._tile_size = tile_size
@@ -50,4 +50,6 @@ class TIFFWriter(BaseWriter):
 
 
 class JPEGWriter(BaseWriter):
-    raise NotImplementedError
+
+    def _put(self, record: Record) -> Dict[str, Any]:
+        raise NotImplementedError

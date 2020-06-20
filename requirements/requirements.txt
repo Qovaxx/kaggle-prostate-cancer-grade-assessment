@@ -6,4 +6,3 @@
 #
 imagecodecs==2020.5.30    # via -r ./requirements/requirements.in
 numpy==1.18.5             # via imagecodecs
-pillow==7.1.2             # via -r ./requirements/requirements.in
