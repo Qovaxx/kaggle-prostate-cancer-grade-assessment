@@ -35,6 +35,7 @@ from .phase import Phase
 
 RGB_TYPE = Tuple[Union[int, float], Union[int, float], Union[int, float]]
 
+
 SEGMENTATION_MAP = {
     "radboud": {
         0: ("background (non tissue) or unknown", (255, 255, 255)),
@@ -52,22 +53,25 @@ SEGMENTATION_MAP = {
 }
 
 
+def get_classname_map(data_provider: str) -> Dict[int, str]:
+    return {k: v[0] for k, v in SEGMENTATION_MAP[data_provider].items()}
+
+
+def get_color_map(data_provider: str, normalized: bool = False) -> Dict[int, RGB_TYPE]:
+    normalize_it = lambda x: tuple(np.asarray(x) / 255) if normalized else x
+    return {k: normalize_it(v[1]) for k, v in SEGMENTATION_MAP[data_provider].items()}
+
+
 class PSGADataAdapter(BaseDataAdapter):
 
     def __init__(self, path: str, writer: BaseWriter, verbose: bool = False,
-                 layer: int = 0, crop_tissue_roi: bool = True, ) -> NoReturn:
+                 layer: int = 0, crop_tissue_roi: bool = True) -> NoReturn:
         super().__init__(path, writer, verbose)
+        assert 0 <=layer <= 2, "Layers 0, 1, 2 are available"
         self._layer = layer
         self._crop_tissue_roi = crop_tissue_roi
         self._mp_namespace = Manager().Namespace()
         self._mp_namespace.self = self
-
-    def get_classname_map(self, data_provider: str) -> Dict[int, str]:
-        return {k: v[0] for k, v in SEGMENTATION_MAP[data_provider].items()}
-
-    def get_color_map(self, data_provider: str, normalized: bool = False) -> Dict[int, RGB_TYPE]:
-        normalize_it = lambda x: tuple(np.asarray(x) / 255) if normalized else x
-        return {k: normalize_it(v[1]) for k, v in SEGMENTATION_MAP[data_provider].items()}
 
     def convert(self, processes: int = 1) -> NoReturn:
         to_paths = lambda path: sorted(path.rglob("*"))
@@ -83,7 +87,7 @@ class PSGADataAdapter(BaseDataAdapter):
             run = lambda x: list(tqdm(x, total=len(paths), desc="Converted: ")) if self._verbose else lambda x: x
             run(p.imap(partial(self._worker, namespace=self._mp_namespace), paths))
 
-        self._writer.flush(path_template="images/*/*")
+        self._writer.flush(count_samples_from="images/*/*")
 
     @staticmethod
     def _worker(paths: Tuple[Path, Optional[Path]], namespace) -> NoReturn:
@@ -91,10 +95,12 @@ class PSGADataAdapter(BaseDataAdapter):
         train_meta = namespace.train_meta
         image_path, mask_path = paths
         name = image_path.stem
-        mask_path = str(image_path).replace("train_images", "train_label_masks").replace(".tiff", "_mask.tiff")
+        mask_path = Path(str(image_path).replace("train_images", "train_label_masks").replace(".tiff", "_mask.tiff"))
 
-        image = MultiImage(str(image_path))[self._layer]
-        mask = MultiImage(mask_path)[self._layer][..., 0] if mask_path else None
+        image = self._read_image_safely(image_path)
+        if image is None:
+            return
+        mask = self._read_mask_safely(mask_path) if mask_path.exists() else None
         if self._crop_tissue_roi:
             if mask is None:
                 image, _ = crop_tissue_roi(image)
@@ -113,15 +119,34 @@ class PSGADataAdapter(BaseDataAdapter):
         if mask is None:
             eda = None
         else:
-            masked = draw_overlay_mask(image, mask, color_map=self.get_color_map(data_provider, normalized=False))
+            masked = draw_overlay_mask(image, mask, color_map=get_color_map(data_provider, normalized=False))
             title_text = f"{data_provider} - id={name[:10]} isup={label} gleason={gleason_score}"
             eda = self._to_eda(masked, title_text,
-                               color_map=self.get_color_map(data_provider, normalized=True),
-                               classname_map=self.get_classname_map(data_provider),
+                               color_map=get_color_map(data_provider, normalized=True),
+                               classname_map=get_classname_map(data_provider),
                                show_keys=list(np.unique(mask)))
 
         record = Record(image, mask, eda, name, label, phase=Phase.TRAIN, additional=additional)
         self._writer.put(record)
+
+    def _read_image_safely(self, path: Path) -> Optional[np.ndarray]:
+        try:
+            return MultiImage(str(path))[self._layer]
+        except Exception as e:
+            print(f"{path.stem}[{self._layer}] - {e}")
+        return None
+
+    def _read_mask_safely(self, path: Path, across_layer_scale: int = 4) -> Optional[np.ndarray]:
+        for current_layer in range(self._layer, 3):
+            try:
+                mask = MultiImage(str(path))[current_layer][..., 0]
+                if current_layer != self._layer:
+                    scale = across_layer_scale ** (current_layer - self._layer)
+                    mask = cv2.resize(mask, dsize=(0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+                return mask
+            except Exception as e:
+                print(f"{path.stem}[{current_layer}] - {e}")
+        return None
 
     @staticmethod
     def _to_eda(image: np.ndarray, title_text: str,
