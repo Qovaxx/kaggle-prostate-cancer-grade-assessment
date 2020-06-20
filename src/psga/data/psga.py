@@ -68,7 +68,7 @@ class PSGADataAdapter(BaseDataAdapter):
         image_paths = to_paths(self._path / "train_images")
         mask_paths = to_paths(self._path / "train_label_masks")
 
-        iter = image_paths
+        iter = image_paths[117:119]
         if self._verbose:
             iter = tqdm(iter, total=len(iter), desc="Converted: ")
 

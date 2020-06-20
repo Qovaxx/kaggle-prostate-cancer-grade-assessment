@@ -28,17 +28,10 @@ RUN apt-get update && \
 RUN git clone https://github.com/NVIDIA/apex && \
     pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./apex && rm -rf ./apex
 
-# Install other system libraries
-# libvips: for pyvips
-RUN apt-get update && \
-    apt-get install -y \
-        libvips  && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
 RUN pip install --no-cache-dir --upgrade pip
 RUN mkdir /server
 COPY ./requirements/requirements.txt /server/requirements.txt
+#RUN pip uninstall -y lime
 RUN pip install --no-cache-dir -r /server/requirements.txt
 
 ARG PROJECT_DIRPATH
