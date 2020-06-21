@@ -8,12 +8,14 @@ from typing import (
 
 from PIL import Image
 from pyvips.enums import ForeignTiffCompression
+from typing_extensions import final
 
 from .base import BaseWriter
 from .record import Record
 from ..vips import from_numpy
 
 
+@final
 class TIFFWriter(BaseWriter):
 
     def __init__(self, path: str, quality: int = 90, tile_size: int = 512) -> NoReturn:
@@ -49,6 +51,7 @@ class TIFFWriter(BaseWriter):
         return attributes
 
 
+@final
 class JPEGWriter(BaseWriter):
 
     def _put(self, record: Record) -> Dict[str, Any]:

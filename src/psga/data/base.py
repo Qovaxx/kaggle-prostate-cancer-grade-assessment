@@ -7,6 +7,8 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
+    Optional,
     NoReturn,
 )
 from pathlib import Path
@@ -95,6 +97,30 @@ class BaseWriter(BaseDataStructure):
     @staticmethod
     def _to_relative(path: Path) -> str:
         return str(path.relative_to(path.parent.parent.parent))
+
+
+class BaseReader(BaseDataStructure):
+
+    def __init__(self, path: str) -> NoReturn:
+        super().__init__(path)
+        assert self.data_path.exists(), "Directory with data not found"
+        assert self.attributes_path.exists(), "Samples attributes file not found"
+        # Preventing the copying of a large object between processes
+        self.__attributes: Optional[List[Dict[str, Any]]] = None
+
+    @property
+    def attributes(self) -> List[Dict[str, Any]]:
+        if self.__attributes is None:
+            self.__attributes = load_pickle(str(self.attributes_path))
+        return self.__attributes
+
+    @abstractmethod
+    def get(self, index: int) -> Record:
+        ...
+
+    @property
+    def num_images(self) -> int:
+        return len(self.attributes)
 
 
 class BaseDataAdapter(ABC):

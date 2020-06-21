@@ -4,3 +4,4 @@ from .writer import (
     TIFFWriter,
     JPEGWriter
 )
+from .reader import TIFFReader
