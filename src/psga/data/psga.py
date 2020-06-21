@@ -21,6 +21,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from skimage.io import MultiImage
+from typing_extensions import Final
 
 from .base import (
     BaseDataAdapter,
@@ -36,7 +37,7 @@ from .phase import Phase
 RGB_TYPE = Tuple[Union[int, float], Union[int, float], Union[int, float]]
 
 
-SEGMENTATION_MAP = {
+SEGMENTATION_MAP: Final = {
     "radboud": {
         0: ("background (non tissue) or unknown", (255, 255, 255)),
         1: ("stroma (connective tissue, non-epithelium tissue)", (0, 0, 255)),
