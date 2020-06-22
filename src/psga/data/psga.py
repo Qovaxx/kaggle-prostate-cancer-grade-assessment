@@ -33,6 +33,7 @@ from .utils import (
     draw_overlay_mask
 )
 from .phase import Phase
+from ..utils import load_pickle
 
 RGB_TYPE = Tuple[Union[int, float], Union[int, float], Union[int, float]]
 
@@ -75,11 +76,12 @@ class PSGADataAdapter(BaseDataAdapter):
         self._mp_namespace.self = self
 
     def convert(self, processes: int = 1) -> NoReturn:
-        to_paths = lambda path: sorted(path.rglob("*"))
-        image_paths = to_paths(self._path / "train_images")
-        mask_paths = to_paths(self._path / "train_label_masks")
-        mask_path_map = {x.stem.replace("_mask", ""): x for x in mask_paths}
-        paths = [(x, mask_path_map.get(x.stem, None)) for x in image_paths]
+        # to_paths = lambda path: sorted(path.rglob("*"))
+        # image_paths = to_paths(self._path / "train_images")
+        # mask_paths = to_paths(self._path / "train_label_masks")
+        # mask_path_map = {x.stem.replace("_mask", ""): x for x in mask_paths}
+        # paths = [(x, mask_path_map.get(x.stem, None)) for x in image_paths]
+        paths = load_pickle("/data/processed/paths.pkl")
 
         train_meta = pd.read_csv(self._path / "train.csv")
         self._mp_namespace.train_meta = train_meta
@@ -88,12 +90,18 @@ class PSGADataAdapter(BaseDataAdapter):
             run = lambda x: list(tqdm(x, total=len(paths), desc="Converted: ")) if self._verbose else lambda x: x
             run(p.imap(partial(self._worker, namespace=self._mp_namespace), paths))
 
-        self._writer.flush(count_samples_from="images/*/*")
+        # from tqdm import tqdm
+        # for path in tqdm(paths, total=len(paths)):
+        #     self._worker(path, train_meta)
+
+        print("flush")
+        # self._writer.flush(count_samples_from="images/*/*")
 
     @staticmethod
     def _worker(paths: Tuple[Path, Optional[Path]], namespace) -> NoReturn:
         self = namespace.self
         train_meta = namespace.train_meta
+        # train_meta = namespace
         image_path, mask_path = paths
         name = image_path.stem
         mask_path = Path(str(image_path).replace("train_images", "train_label_masks").replace(".tiff", "_mask.tiff"))
@@ -108,6 +116,10 @@ class PSGADataAdapter(BaseDataAdapter):
             else:
                 image, additional_images = crop_tissue_roi(image, additional_images=[mask])
                 mask = additional_images[0]
+        if 0 in image.shape:
+            # Сделать выше, типа проверка и все пропускать, не менять функцию
+            print(f"CONTINUE {name} with shape {image.shape}")
+            return
 
         row = train_meta[train_meta.image_id == name].iloc[0]
         data_provider = row["data_provider"]
