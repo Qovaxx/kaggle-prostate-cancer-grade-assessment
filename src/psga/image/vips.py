@@ -5,6 +5,8 @@ import numpy as np
 
 logging.getLogger("pyvips").setLevel(logging.WARNING)
 
+__all__ = ["from_numpy", "to_numpy", "imread"]
+
 
 FORMAT_MAP = {
     "uchar": np.uint8,
@@ -20,16 +22,16 @@ FORMAT_MAP = {
 }
 
 DTYPE_MAP = {
-    'uint8': 'uchar',
-    'int8': 'char',
-    'uint16': 'ushort',
-    'int16': 'short',
-    'uint32': 'uint',
-    'int32': 'int',
-    'float32': 'float',
-    'float64': 'double',
-    'complex64': 'complex',
-    'complex128': 'dpcomplex',
+    "uint8": 'uchar',
+    "int8": 'char',
+    "uint16": 'ushort',
+    "int16": 'short',
+    "uint32": 'uint',
+    "int32": 'int',
+    "float32": 'float',
+    "float64": 'double',
+    "complex64": 'complex',
+    "complex128": 'dpcomplex',
 }
 
 
