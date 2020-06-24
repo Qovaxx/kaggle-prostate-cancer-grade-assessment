@@ -12,7 +12,7 @@ from typing_extensions import final
 
 from .base import BaseWriter
 from .record import Record
-from ..vips import from_numpy
+from ..image import vips
 
 import os
 @final
@@ -32,18 +32,18 @@ class TIFFWriter(BaseWriter):
         image_path.parent.mkdir(parents=True, exist_ok=True)
         if image_path.exists():
             os.remove(str(image_path))
-        from_numpy(record.image).write_to_file(str(image_path),
-                                               bigtiff=True, compression=ForeignTiffCompression.JPEG, Q=self._quality,
-                                               tile=True, tile_width=self._tile_size, tile_height=self._tile_size,
-                                               rgbjpeg=True)
+        vips.from_numpy(record.image).write_to_file(str(image_path),
+                                                    bigtiff=True, compression=ForeignTiffCompression.JPEG, Q=self._quality,
+                                                    tile=True, tile_width=self._tile_size, tile_height=self._tile_size,
+                                                    rgbjpeg=True)
         if record.mask is not None:
             mask_path.parent.mkdir(parents=True, exist_ok=True)
             if mask_path.exists():
                 os.remove(str(mask_path))
-            from_numpy(record.mask).write_to_file(str(mask_path),
-                                                  bigtiff=True, compression=ForeignTiffCompression.LZW,
-                                                  tile=True, tile_width=self._tile_size, tile_height=self._tile_size,
-                                                  rgbjpeg=False)
+            vips.from_numpy(record.mask).write_to_file(str(mask_path),
+                                                       bigtiff=True, compression=ForeignTiffCompression.LZW,
+                                                       tile=True, tile_width=self._tile_size, tile_height=self._tile_size,
+                                                       rgbjpeg=False)
 
             eda_path.parent.mkdir(parents=True, exist_ok=True)
             if eda_path.exists():

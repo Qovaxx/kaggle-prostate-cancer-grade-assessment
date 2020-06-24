@@ -28,12 +28,11 @@ from .base import (
     BaseWriter
 )
 from .record import Record
-from .utils import (
-    crop_tissue_roi,
-    draw_overlay_mask
-)
+from .utils import draw_overlay_mask
 from .phase import Phase
+from ..image.preprocessing import NoneWhiteROICropper
 from ..utils import load_pickle
+
 
 RGB_TYPE = Tuple[Union[int, float], Union[int, float], Union[int, float]]
 
@@ -67,11 +66,11 @@ def get_color_map(data_provider: str, normalized: bool = False) -> Dict[int, RGB
 class PSGADataAdapter(BaseDataAdapter):
 
     def __init__(self, path: str, writer: BaseWriter, verbose: bool = False,
-                 layer: int = 0, crop_tissue_roi: bool = True) -> NoReturn:
+                 layer: int = 0, crop_nonwhite_roi: bool = True) -> NoReturn:
         super().__init__(path, writer, verbose)
         assert 0 <=layer <= 2, "Layers 0, 1, 2 are available"
         self._layer = layer
-        self._crop_tissue_roi = crop_tissue_roi
+        self._crop_nonwhite_roi = crop_nonwhite_roi
         self._mp_namespace = Manager().Namespace()
         self._mp_namespace.self = self
 
@@ -110,12 +109,10 @@ class PSGADataAdapter(BaseDataAdapter):
         if image is None:
             return
         mask = self._read_mask_safely(mask_path) if mask_path.exists() else None
-        if self._crop_tissue_roi:
-            if mask is None:
-                image, _ = crop_tissue_roi(image)
-            else:
-                image, additional_images = crop_tissue_roi(image, additional_images=[mask])
-                mask = additional_images[0]
+        if self._crop_nonwhite_roi:
+            cropper = NoneWhiteROICropper()
+            image, mask = cropper(image, mask)
+
         if 0 in image.shape:
             # Сделать выше, типа проверка и все пропускать, не менять функцию
             print(f"CONTINUE {name} with shape {image.shape}")
