@@ -40,11 +40,11 @@ class BaseDataStructure(ABC):
 
     @property
     def data_path(self) -> Path:
-        return self._root / "data"
+        return self._root / "data_source"
 
     @property
-    def attributes_path(self) -> Path:
-        return self._root / "attributes.pkl"
+    def meta_path(self) -> Path:
+        return self._root / "meta.pkl"
 
     @property
     def images_path(self) -> Path:
@@ -64,25 +64,25 @@ class BaseWriter(BaseDataStructure):
     def __init__(self, path: str) -> NoReturn:
         super().__init__(path)
         self._dirs_exist = False
-        self._attributes = list()
+        self._meta: Optional[List[Dict[str, Any]]] = list()
         self._temp_path = Path(self.root_path / "temp")
 
     @add_method_call("init_directories")
     def put(self, record: Record):
         tmp_pickle_path = (self._temp_path / record.name).with_suffix(".pkl")
         if not tmp_pickle_path.exists():
-            attributes = self._put(record)
-            save_pickle(attributes, path=str(tmp_pickle_path))
+            meta = self._put(record)
+            save_pickle(meta, path=str(tmp_pickle_path))
 
     @abstractmethod
     def _put(self, record: Record) -> Dict[str, Any]:
         ...
 
     def flush(self, count_samples_from: str = "*/*") -> NoReturn:
-        attributes = [load_pickle(str(path)) for path in self._temp_path.iterdir()]
+        meta = [load_pickle(str(path)) for path in self._temp_path.iterdir()]
         images_count = len(list(Path(self.data_path).rglob(count_samples_from)))
-        assert images_count == len(attributes), "Dimensions of data and attributes did not match"
-        save_pickle(attributes, path=str(self.attributes_path))
+        assert images_count == len(meta), "Dimensions of data_source and meta did not match"
+        save_pickle(meta, path=str(self.meta_path))
         shutil.rmtree(self._temp_path)
 
     def init_directories(self) -> NoReturn:
@@ -103,16 +103,16 @@ class BaseReader(BaseDataStructure):
 
     def __init__(self, path: str) -> NoReturn:
         super().__init__(path)
-        assert self.data_path.exists(), "Directory with data not found"
-        assert self.attributes_path.exists(), "Samples attributes file not found"
+        assert self.data_path.exists(), "Directory with data_source not found"
+        assert self.meta_path.exists(), "Samples meta file not found"
         # Preventing the copying of a large object between processes
-        self.__attributes: Optional[List[Dict[str, Any]]] = None
+        self.__meta: Optional[List[Dict[str, Any]]] = None
 
     @property
-    def attributes(self) -> List[Dict[str, Any]]:
-        if self.__attributes is None:
-            self.__attributes = load_pickle(str(self.attributes_path))
-        return self.__attributes
+    def meta(self) -> List[Dict[str, Any]]:
+        if self.__meta is None:
+            self.__meta = load_pickle(str(self.meta_path))
+        return self.__meta
 
     @abstractmethod
     def get(self, index: int) -> Record:
@@ -120,7 +120,7 @@ class BaseReader(BaseDataStructure):
 
     @property
     def num_images(self) -> int:
-        return len(self.attributes)
+        return len(self.meta)
 
 
 class BaseDataAdapter(ABC):

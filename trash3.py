@@ -2,7 +2,7 @@ from itertools import chain
 from skimage.io import MultiImage
 import matplotlib.pyplot as plt
 from skimage import morphology
-from src.psga.image.preprocessing import NoneWhiteROICropper, remove_pen_marks
+from src.psga.tools.preprocessing import NoneWhiteROICropper, remove_pen_marks
 import cv2
 import numpy as np
 import rectpack
@@ -16,7 +16,7 @@ def show(image):
 
 # 0c63ad44d6bc717dcf0c965d1284d503
 image = MultiImage("/data/raw/prostate-cancer-grade-assessment/train_images/5c023def11d24939459afd3e3cb69620.tiff")
-# mask = MultiImage("/data/raw/prostate-cancer-grade-assessment/train_label_masks/52d9b14996bd9f5c59cb765cd276f111.tiff")
+# mask = MultiImage("/data_source/raw/prostate-cancer-grade-assessment/train_label_masks/52d9b14996bd9f5c59cb765cd276f111.tiff")
 
 image0 = image[0]
 image1 = image[1]
@@ -51,9 +51,9 @@ for contour in contours:
     images.append(cv2.warpPerspective(corrected, M, (width, height)))
 
 # images = sorted(images, key=lambda x: x.shape[0] * x.shape[1], reverse=True)
-# for image in images:
-#     if image.shape[0] < image.shape[1]:
-#         image = np.rot90(image)
+# for tools in images:
+#     if tools.shape[0] < tools.shape[1]:
+#         tools = np.rot90(tools)
 
 
 sides = list(chain(*[x.shape[:2] for x in images]))

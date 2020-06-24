@@ -1,5 +1,5 @@
-from .data.phase import Phase as __Phase
-from .grade import CancerGradeSystem
+from .phase import Phase as __Phase
+from .settings import *
 
 TRAIN = __Phase.TRAIN
 VAL = __Phase.VAL
