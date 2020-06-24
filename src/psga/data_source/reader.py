@@ -11,7 +11,7 @@ from .record import Record
 class TIFFReader(BaseReader):
 
     def get(self, index: int) -> Record:
-        record = self.attributes[index]
+        record = self.meta[index]
 
 
         a = 4

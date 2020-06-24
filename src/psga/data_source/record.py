@@ -10,7 +10,7 @@ from typing import (
 
 import numpy as np
 
-from .phase import Phase
+from src.psga.phase import Phase
 
 
 @dataclass

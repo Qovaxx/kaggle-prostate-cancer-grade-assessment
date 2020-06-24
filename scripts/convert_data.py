@@ -1,5 +1,5 @@
-from src.psga.data import TIFFWriter
-from src.psga.data import PSGADataAdapter
+from src.psga.data_source import TIFFWriter
+from src.psga.data_source import PSGADataAdapter
 from src.psga.settings import (
     RAW_DIRPATH,
     PROCESSED_DIRPATH,
