@@ -1,8 +1,7 @@
 from itertools import chain
 from skimage.io import MultiImage
 import matplotlib.pyplot as plt
-from skimage import morphology
-from src.psga.tools.preprocessing import NoneWhiteROICropper, remove_pen_marks
+from src.psga.processing.preprocessing import remove_gray_and_penmarks
 import cv2
 import numpy as np
 import rectpack
@@ -25,7 +24,7 @@ show(image1)
 z = image1.shape[0] * image1.shape[1]
 
 
-corrected, mask = remove_pen_marks(image1, max_tissue_value=210)
+corrected, mask = remove_gray_and_penmarks(image1, max_tissue_value=210)
 show(mask)
 show(image1 - corrected)
 
@@ -50,10 +49,13 @@ for contour in contours:
     M = cv2.getPerspectiveTransform(src_pts, dst_pts)
     images.append(cv2.warpPerspective(corrected, M, (width, height)))
 
+    # box = np.int0(cv2.boxPoints(box=rectangle))
+    # cv2.drawContours(image, [box], 0, (0, 255, 255), 4)
+
 # images = sorted(images, key=lambda x: x.shape[0] * x.shape[1], reverse=True)
-# for tools in images:
-#     if tools.shape[0] < tools.shape[1]:
-#         tools = np.rot90(tools)
+# for utils in images:
+#     if utils.shape[0] < utils.shape[1]:
+#         utils = np.rot90(utils)
 
 
 sides = list(chain(*[x.shape[:2] for x in images]))

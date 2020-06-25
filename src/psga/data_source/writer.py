@@ -12,7 +12,7 @@ from typing_extensions import final
 
 from .base import BaseWriter
 from .record import Record
-from ..tools import vips
+from ..utils import vips
 
 import os
 @final
@@ -51,7 +51,7 @@ class TIFFWriter(BaseWriter):
             Image.fromarray(record.eda).save(str(eda_path), quality=self._quality, subsampling=0)
 
         meta = asdict(record)
-        meta["tools"] = self._to_relative(image_path)
+        meta["utils"] = self._to_relative(image_path)
         meta["mask"] = self._to_relative(mask_path) if record.mask is not None else None,
         meta["eda"] = self._to_relative(eda_path) if record.eda is not None else None,
         return meta

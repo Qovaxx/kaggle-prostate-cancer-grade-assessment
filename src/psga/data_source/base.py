@@ -14,7 +14,7 @@ from typing import (
 from pathlib import Path
 
 from .record import Record
-from ..utils import (
+from src.psga.utils.pickle import (
     save_pickle,
     load_pickle
 )
