@@ -13,7 +13,7 @@ def show(image):
 
 # бледная картинка f34713c3ba1e433268c056d42b29fef6
 #5c023def11d24939459afd3e3cb69620#
-name = "0f914d1f044c187e6a5be7e996d877a9"
+name = "3dedb469b5184d4d8920dd9b6af01139"
 slide_image = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
 slide_mask = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_label_masks/{name}_mask.tiff")
 
@@ -24,11 +24,11 @@ mask = slide_mask[2][..., 0]
 image_roi, mask_roi, rectangle_roi = minimize_background(image, mask)
 image_clear, mask_clear, mask_cleared = remove_gray_and_penmarks(image_roi, mask_roi,
                                                                  kernel_size=(5, 5),  # (5, 5)
-                                                                 holes_objects_threshold_size=100,  # 1000
+                                                                 holes_objects_threshold_size=100,  # 100
                                                                  max_gray_saturation=5,  # 5
                                                                  red_left_shift=50,  # 60
                                                                  background_value=255)
-image_atlas, mask_atlas = convert_to_atlas(image_clear, mask_cleared, mask_clear)
+image_atlas, mask_atlas, _, _ = convert_to_atlas(image_clear, mask_cleared, mask_clear)
 
 show(image_atlas)
 show(mask_atlas)
