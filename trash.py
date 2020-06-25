@@ -1,6 +1,5 @@
 from pathlib import Path
-from src.psga.utils import load_pickle, save_pickle
-from tqdm import tqdm
+from src.psga.utils.pickle import load_pickle
 
 tmp_path = Path("/data_source/processed/prostate-cancer-grade-assessment/temp")
 meta = [load_pickle(str(x)) for x in tmp_path.iterdir()]
@@ -11,7 +10,7 @@ meta = [load_pickle(str(x)) for x in tmp_path.iterdir()]
 # good = list()
 # bad = list()
 # for attr in tqdm(attributes, total=len(attributes)):
-#     image_path = data_root / attr["tools"]
+#     image_path = data_root / attr["utils"]
 #     if not image_path.exists():
 #         bad.append(attr["name"])
 #         continue
@@ -41,7 +40,7 @@ meta = [load_pickle(str(x)) for x in tmp_path.iterdir()]
 # #CHECK OUTER ATTRS IMAGES
 # image_paths = list(Path("/data_source/processed/prostate-cancer-grade-assessment/data_source/images").rglob("*/*"))
 # image_paths = [str(x.relative_to(x.parent.parent.parent)) for x in image_paths]
-# att_paths = [x["tools"] for x in attributes]
+# att_paths = [x["utils"] for x in attributes]
 # z = set(image_paths).difference(set(att_paths))
 # print(z)
 
