@@ -1,4 +1,3 @@
-from itertools import chain
 from typing import (
     Optional,
     Tuple
@@ -10,7 +9,10 @@ import numpy as np
 from skimage import morphology
 
 from . import functional as F
-from .type import RECT_TYPE
+from .type import (
+    Contour,
+    CV2_RECT_TYPE
+)
 
 
 import matplotlib.pyplot as plt
@@ -21,7 +23,7 @@ def show(image):
 
 
 def minimize_background(image: np.ndarray, mask: Optional[np.ndarray] = None,
-                        min_background_value: int = 255) -> Tuple[np.ndarray, Optional[np.ndarray], RECT_TYPE]:
+                        min_background_value: int = 255) -> Tuple[np.ndarray, Optional[np.ndarray], CV2_RECT_TYPE]:
     if mask is not None:
         assert image.shape[:2] == mask.shape
 
@@ -57,9 +59,11 @@ def remove_gray_and_penmarks(image: np.ndarray, mask: Optional[np.ndarray] = Non
     pen_marks_mask = cv2.dilate(pen_marks_mask, kernel, iterations=5)
     cleared_mask = tissue_mask * (1 - pen_marks_mask)
 
-    cleared_mask = morphology.remove_small_holes(cleared_mask.astype(np.bool), area_threshold=holes_objects_threshold_size,
+    cleared_mask = morphology.remove_small_holes(cleared_mask.astype(np.bool),
+                                                 area_threshold=holes_objects_threshold_size,
                                                  connectivity=1).astype(np.uint8)
-    cleared_mask = morphology.remove_small_objects(cleared_mask.astype(np.bool), min_size=holes_objects_threshold_size,
+    cleared_mask = morphology.remove_small_objects(cleared_mask.astype(np.bool),
+                                                   min_size=holes_objects_threshold_size,
                                                    connectivity=1).astype(np.uint8)
     cleared_mask = cv2.dilate(cleared_mask, kernel, iterations=2)
     cleared_mask = cv2.erode(cleared_mask, kernel, iterations=4)
@@ -75,18 +79,17 @@ def convert_to_atlas(image: np.ndarray, tissue_mask: np.ndarray, mask: Optional[
                      step_size: int = 10):
     if mask is not None:
         assert image.shape[:2] == mask.shape == tissue_mask.shape
-    contours, _ = cv2.findContours(tissue_mask, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
-    pairs = list()
+    found, _ = cv2.findContours(tissue_mask, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
+    contours = list()
+    sides = list()
 
-    for contour in contours:
+    for contour in found:
         contour_mask = np.full(tissue_mask.shape, fill_value=0, dtype=np.uint8)
         cv2.drawContours(contour_mask, contours=[contour], contourIdx=0, color=1, thickness=-1)
         rectangle = cv2.minAreaRect(points=contour)
-        contoured_image = F.apply_mask_to_image(image, filter_mask=contour_mask)
-        contoured_mask = F.apply_mask_to_mask(mask, filter_mask=contour_mask) if mask is not None else None
-        pairs.append(F.crop_rectangle(contoured_image, rectangle, contoured_mask))
+        contours.append(Contour(contour_mask, rectangle))
+        sides.extend([int(rectangle[1][0]), int(rectangle[1][1])])
 
-    sides = list(chain(*[x[0].shape[:2] for x in pairs]))
     height = max(sides)
     width = min(sides)
 
@@ -96,32 +99,17 @@ def convert_to_atlas(image: np.ndarray, tissue_mask: np.ndarray, mask: Optional[
                                     sort_algo=rectpack.SORT_LSIDE,
                                     rotation=True)
         packer.add_bin(width=width, height=height)
-        for index, pair in enumerate(pairs):
-            packer.add_rect(width=pair[0].shape[1], height=pair[0].shape[0], rid=index)
+        for index, contour in enumerate(contours):
+            packer.add_rect(width=int(contour.rectangle[1][1]), height=int(contour.rectangle[1][0]), rid=index)
 
         packer.pack()
-        if len(pairs) == len(packer[0].rectangles):
+        if len(contours) == len(packer[0].rectangles):
             break
         else:
             width += step_size
 
-    image_atlas = np.full(shape=(packer[0].height, packer[0].width, 3), fill_value=255, dtype=np.uint8)
-    mask_atlas = None
+    rectangles = packer.rect_list()
+    image_atlas, mask_atlas = F.pack_atlas(image, mask=mask, shape=(height, width),
+                                           contours=contours, rectangles=rectangles)
 
-    for rect in packer.rect_list():
-        _, x, y, w, h, index = rect
-        image_crop = pairs[index][0]
-        if image_crop.shape[:2] != (h, w):
-            image_crop = np.rot90(image_crop)
-        image_atlas[y: y + h, x: x + w] = image_crop
-
-    if mask is not None:
-        mask_atlas = np.zeros(shape=(packer[0].height, packer[0].width), dtype=np.uint8)
-        for rect in packer.rect_list():
-            _, x, y, w, h, index = rect
-            mask_crop = pairs[index][1]
-            if mask_crop.shape != (h, w):
-                mask_crop = np.rot90(mask_crop)
-            mask_atlas[y: y + h, x: x + w] = mask_crop
-
-    return image_atlas, mask_atlas
+    return image_atlas, mask_atlas, contours, rectangles
