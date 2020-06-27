@@ -9,9 +9,12 @@ import numpy as np
 from skimage import morphology
 
 from . import functional as F
-from .type import (
+from .types import (
     Contour,
-    CV2_RECT_TYPE
+    IMAGE_TYPE,
+    MASK_TYPE,
+    CV2_RECT_TYPE,
+    SLICE_TYPE
 )
 
 from time import time
@@ -22,34 +25,65 @@ def show(image):
     plt.show()
 
 
-def minimize_background(image: np.ndarray, mask: Optional[np.ndarray] = None,
-                        background_value: int = 255) -> Tuple[np.ndarray, Optional[np.ndarray], np.ndarray]:
+def reduce_external_background(image: IMAGE_TYPE, mask: MASK_TYPE = None,
+                               bbox: Optional[np.ndarray] = None, background_value: int = 255
+                               ) -> Tuple[IMAGE_TYPE, MASK_TYPE, np.ndarray]:
+    F.validate_shape(image, mask)
+
+    if bbox is None:
+        height_indices = (image.min(axis=(1, 2)) < background_value).nonzero()[0]
+        width_indices = (image.min(axis=(0, 2)) < background_value).nonzero()[0]
+        bbox = np.array([[width_indices[0], height_indices[0]], [width_indices[-1], height_indices[-1]]])
+
+    reduced_image = F.crop_bbox(image, bbox)
+    reduced_mask = None
     if mask is not None:
-        assert image.shape[:2] == mask.shape[:2]
+        reduced_mask = F.crop_bbox(mask, bbox)
+    return reduced_image, reduced_mask, bbox
 
-    height_indices = (image.min(axis=(1, 2)) < background_value).nonzero()[0]
-    width_indices = (image.min(axis=(0, 2)) < background_value).nonzero()[0]
-    bbox = np.array([[width_indices[0], height_indices[0]], [width_indices[-1], height_indices[-1]]])
 
-    image = F.crop_bbox(image, bbox)
+def reduce_inner_background(image: IMAGE_TYPE, mask: MASK_TYPE = None,
+                            row_slice: Optional[SLICE_TYPE] = None, column_slice: Optional[SLICE_TYPE] = None,
+                            background_value: int = 255,
+                            ) -> Tuple[IMAGE_TYPE, MASK_TYPE, SLICE_TYPE, SLICE_TYPE]:
+    F.validate_shape(image, mask)
+
+    if row_slice is None and column_slice is None:
+        background_mask = (image == background_value)
+        to_bool_list = lambda axis: [x.all() for x in ~np.all(background_mask, axis=axis)]
+        row_slice = to_bool_list(axis=1)
+        column_slice = to_bool_list(axis=0)
+
+    reduced_image = F.crop_slices(image, row_slice, column_slice)
+    reduced_mask = None
     if mask is not None:
-        mask = F.crop_bbox(mask, bbox)
-    return image, mask, bbox
+        reduced_mask = F.crop_slices(mask, row_slice, column_slice)
+    return reduced_image, reduced_mask, row_slice, column_slice
 
 
-def crop_roi(image: np.ndarray, mask: Optional[np.ndarray] = None,
-             background_value: int = 255) -> Tuple[np.ndarray, Optional[np.ndarray], CV2_RECT_TYPE]:
-    if mask is not None:
-        assert image.shape[:2] == mask.shape
+def crop_roi(image: IMAGE_TYPE, mask: MASK_TYPE = None,
+             rectangle: Optional[CV2_RECT_TYPE] = None,
+             background_value: int = 255
+             ) -> Tuple[IMAGE_TYPE, MASK_TYPE, CV2_RECT_TYPE]:
+    F.validate_shape(image, mask)
 
-    gray = cv2.cvtColor(image, code=cv2.COLOR_RGB2GRAY)
-    _, roi = cv2.threshold(gray, thresh=background_value - 1, maxval=image.max(), type=cv2.THRESH_BINARY_INV)
-    contours, _ = cv2.findContours(roi, mode=cv2.RETR_LIST, method=cv2.CHAIN_APPROX_SIMPLE)
-    rectangle = cv2.minAreaRect(points=np.concatenate(contours))
-    cropped_image, cropped_mask = F.crop_rectangle(image=image, mask=mask, rectangle=rectangle)
+    if rectangle is None:
+        gray = cv2.cvtColor(image, code=cv2.COLOR_RGB2GRAY)
+        _, roi = cv2.threshold(gray, thresh=background_value - 1, maxval=image.max(), type=cv2.THRESH_BINARY_INV)
+        contours, _ = cv2.findContours(roi, mode=cv2.RETR_LIST, method=cv2.CHAIN_APPROX_SIMPLE)
+        rectangle = cv2.minAreaRect(points=np.concatenate(contours))
 
+    cropped_image, cropped_mask = F.crop_rectangle(image, mask=mask, rectangle=rectangle)
     return cropped_image, cropped_mask, rectangle
 
+
+
+
+
+
+
+
+# TODO: REFACTOR
 
 def remove_gray_and_penmarks(image: np.ndarray, mask: Optional[np.ndarray] = None,
                              kernel_size: Tuple[int, int] = (5, 5), holes_objects_threshold_size: int = 100,
@@ -110,59 +144,75 @@ def convert_to_atlas(image: np.ndarray, tissue_mask: np.ndarray,
     return image_atlas, mask_atlas, contours
 
 
-def compose_preprocessing(master_image: np.ndarray, minion_image: np.ndarray,
-                          kernel_size: Tuple[int, int], holes_objects_threshold_size: int,
-                          master_mask: Optional[np.ndarray] = None,
-                          minion_mask: Optional[np.ndarray] = None,
-                          background_value: int = 255) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+def compose_preprocessing(master_image: IMAGE_TYPE, minion_image: IMAGE_TYPE,
+                          master_mask: MASK_TYPE = None, minion_mask: MASK_TYPE = None,
+                          roi_acceptance_threshold: float = 1.5,
+                          ) -> Tuple[IMAGE_TYPE, MASK_TYPE]:
 
     scale = int(master_image.shape[0] / minion_image.shape[0])
 
-    # Minimize empty background
-    start = time()
-    minion_image_minimized, minion_mask_minimized, bbox = minimize_background(image=minion_image, mask=minion_mask,
-                                                                              background_value=background_value)
-    print(f"MINION MINIMIZED: {time() - start}")
+    # Reduce empty white external background
+    minion_image_ex_reduced, minion_mask_ex_reduced, bbox = \
+        reduce_external_background(image=minion_image, mask=minion_mask)
+    # master_image_ex_reduced, master_mask_ex_reduced, _ = \
+    #     reduce_external_background(image=master_image, mask=master_mask, bbox=bbox * scale)
 
-    start = time()
-    scaled_bbox = bbox * scale
-    master_image_minimized = F.crop_bbox(master_image, scaled_bbox)
-    master_mask_minimized = F.crop_bbox(master_mask, scaled_bbox) if master_mask is not None else None
-    print(f"MASTER MINIMIZED: {time() - start}")
-
-
-    mask_ = minion_image_minimized == background_value
-    row_not_blank = [row.all() for row in ~np.all(mask_, axis=1)]
-    col_not_blank = [col.all() for col in ~np.all(mask_, axis=0)]
-    bounded_cut = minion_image_minimized[row_not_blank, :]
-    bounded_cut = bounded_cut[:, col_not_blank]
-    show(bounded_cut)
-
-    rows = (np.asarray(row_not_blank).astype(np.uint8))[..., np.newaxis]
-    new_rows = cv2.resize(rows, dsize=(master_image_minimized.shape[0], 1)[::-1], interpolation=cv2.INTER_NEAREST)
-    new_rows = new_rows.ravel().astype(np.bool).tolist()
-
-    cols = (np.asarray(col_not_blank).astype(np.uint8))[..., np.newaxis]
-    new_cols = cv2.resize(cols, dsize=(master_image_minimized.shape[1], 1)[::-1], interpolation=cv2.INTER_NEAREST)
-    new_cols = new_cols.ravel().astype(np.bool).tolist()
-
-
-    bounded_cut1 = master_image_minimized[new_rows, :]
-    bounded_cut1 = bounded_cut1[:, new_cols]
-    show(bounded_cut1)
-
-    a = 4
+    # Reduce empty white inner background
+    minion_image_in_reduced, minion_mask_in_reduced, row_slice, column_slice = \
+        reduce_inner_background(image=minion_image_ex_reduced, mask=minion_mask_ex_reduced)
+    # master_image_in_reduced, master_mask_in_reduced, _, _ = \
+    #     reduce_inner_background(image=master_image_ex_reduced, mask=master_mask_ex_reduced,
+    #                             row_slice=F.scale_slice(row_slice, master_image_ex_reduced.shape[0]),
+    #                             column_slice=F.scale_slice(column_slice, master_image_ex_reduced.shape[1]))
 
 
 
-    # print(master_image_minimized.shape[0] * master_image_minimized.shape[1])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # # Crop the smallest possible region of interest
+    # minion_image_roi, minion_mask_roi, rectangle = crop_roi(image=minion_image_in_reduced, mask=minion_mask_in_reduced)
+    # if minion_image_in_reduced.size / minion_image_roi.size > roi_acceptance_threshold:
+    #     print(f"ACCEPT {minion_image_in_reduced.size / minion_image_roi.size}")
+    #     master_image_roi, master_mask_roi = F.crop_rectangle(image=master_image_in_reduced, mask=master_mask_in_reduced,
+    #                                                          rectangle=F.scale_rectangle(rectangle, scale))
+    # else:
+    #     print(f"FAIL {minion_image_in_reduced.size / minion_image_roi.size}")
+    #     minion_image_roi = minion_image_in_reduced
+    #     minion_mask_roi = minion_mask_in_reduced
+    #     master_image_roi = master_image_in_reduced
+    #     master_mask_roi = master_mask_in_reduced
     #
-    # # Crop minimum roi
-    # minion_image_roi, minion_mask_roi, rectangle_roi = crop_roi(image=minion_image_minimized, mask=minion_mask_minimized)
-    # scaled_rectangle_roi = F.scale_rectangle(rectangle_roi, scale)
-    # master_image_roi, master_mask_roi = F.crop_rectangle(image=master_image_minimized, mask=master_mask_minimized,
-    #                                                      rectangle=scaled_rectangle_roi)
     #
+    #
+    # # # Crop minimum roi
+    # # minion_image_roi, minion_mask_roi, rectangle_roi = crop_roi(image=minion_image_ex_reduced, mask=minion_mask_ex_reduced)
+    # # scaled_rectangle_roi = F.scale_rectangle(rectangle_roi, scale)
+    # # master_image_roi, master_mask_roi = F.crop_rectangle(image=master_image_ex_reduced, mask=master_mask_ex_reduced,
+    # #                                                      rectangle=scaled_rectangle_roi)
+
+
+
     # # Clear from gray artifacts and pen marks
     # minion_image_clear, minion_mask_clear, tissue_mask = \
     #     remove_gray_and_penmarks(image=minion_image_roi,
