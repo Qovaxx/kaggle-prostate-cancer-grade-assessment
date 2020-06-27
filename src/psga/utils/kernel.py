@@ -24,11 +24,14 @@ import numpy as np
 DL_FRAMEWORKS = ("torch", "tensorflow", "maxnet", "caffe2", "caffe", "lasagne", "chainer")
 
 
-def mimic_kaggle_kernel_specs() -> NoReturn:
+def mimic_kaggle_kernel_specs(cpu: bool = True, gpu: bool = True, ram: bool = True) -> NoReturn:
     system = System()
-    system.limit_cpu(cpus=[0, 1], logical=True)
-    system.limit_gpu(gpus=[0])
-    system.limit_ram(gigabytes=13)
+    if cpu:
+        system.limit_cpu(cpus=[0, 1], logical=True)
+    if gpu:
+        system.limit_gpu(gpus=[0])
+    if ram:
+        system.limit_ram(gigabytes=13)
 
 
 class System(object):

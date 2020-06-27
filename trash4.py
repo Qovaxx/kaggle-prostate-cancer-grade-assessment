@@ -1,12 +1,12 @@
 from src.psga.utils.kernel import mimic_kaggle_kernel_specs
-mimic_kaggle_kernel_specs()
+mimic_kaggle_kernel_specs(cpu=False)
+
 
 from skimage.io import MultiImage
 from src.psga.processing.preprocessing import compose_preprocessing
 from src.psga.processing.compose import compose_pre_processing
 from src.psga.utils.slide import get_layer_safely
 import sys
-
 from pathlib import Path
 from openslide import OpenSlide
 from tqdm import tqdm
@@ -14,13 +14,9 @@ from time import time
 from collections import Counter
 from src.psga.utils.pickle import save_pickle, load_pickle
 from src.psga.transforms.background import crop_external_background
-
-
-import subprocess
-n = str(subprocess.check_output(["nvidia-smi", "-L"])).count('UUID')
-
-
 import matplotlib.pyplot as plt
+
+
 def show(image):
     plt.figure()
     plt.imshow(image)
@@ -50,17 +46,11 @@ def show(image):
 
 
 
-try:
-    name = "39b20d5c2588bafb42c5d6915de11b6b"
-    image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
-    # mask_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_label_masks/{name}_mask.tiff")
-
-    large_image = get_layer_safely(image_slide, layer=0)
-    small_image = get_layer_safely(image_slide, layer=2)
 
 
+name = "680984934a44ffcfc33f21b9b62f9436"
+image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
+# mask_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_label_masks/{name}_mask.tiff")
 
-
-except MemoryError:
-    sys.stderr.write('\n\nERROR: Memory Exception\n')
-    sys.exit(1)
+large_image = get_layer_safely(image_slide, layer=0)
+# small_image = get_layer_safely(image_slide, layer=2)
