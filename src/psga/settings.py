@@ -9,3 +9,5 @@ ARTIFACTS_DIRPATH = Path(os.environ.get("ARTIFACTS_DIRPATH", "/artifacts"))
 
 KAGGLE_DATASET_NAME = "prostate-cancer-grade-assessment"
 SUBMISSION_FILENAME = "submission.csv"
+MAX_13GB_KERNEL_RGB_IMAGE_SQUARE = 3200000000
+CV2_MAX_IMAGE_SIZE = 32767
