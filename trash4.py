@@ -36,9 +36,10 @@ square = load_pickle("/data/raw/square.pkl")
 from src.psga.processing import dual_compose_preprocessing
 
 
-mimic_kaggle_kernel_specs(cpu=False)
+# mimic_kaggle_kernel_specs(cpu=False)
 
-name = "680984934a44ffcfc33f21b9b62f9436"
+# 7648ece616fd961c1447684b7dc0c654 не фитятся углы
+name = "1fc49bfab631583981f96f285ec0c94d"
 image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
 
 large_image = get_layer_safely(image_slide, layer=0)

@@ -8,6 +8,7 @@ from dataclasses import (
 )
 from typing import (
     NoReturn,
+    Tuple,
     Optional,
     List
 )
@@ -55,10 +56,29 @@ class Slice2D(BaseEntity):
 
 
 @dataclass
+class Rectangle(BaseEntity):
+    center_x: float
+    center_y: float
+    width: float
+    height: float
+    angle: float
+
+    def to_cv2(self) -> Tuple[Tuple[float, float], Tuple[float, float], float]:
+        return ((self.center_x, self.center_y), (self.width, self.height), self.angle)
+
+    def rescale(self, scale: int) -> NoReturn:
+
+
+        a = 4
+
+
+@dataclass
 class Intermediates(BaseEntity):
     external_bbox: Optional[BBox] = field(default=None)
     inner_slice: Optional[Slice2D] = field(default=None)
+    roi_rectangle: Optional[Rectangle] = field(default=None)
 
     def rescale(self, scale: int) -> NoReturn:
         self.external_bbox.rescale(scale)
         self.inner_slice.rescale(scale)
+        self.roi_rectangle.rescale(scale)

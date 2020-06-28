@@ -3,11 +3,13 @@ from typing import (
     Tuple
 )
 
+import cv2
 import numpy as np
 
 from .entity import (
     BBox,
-    Slice2D
+    Slice2D,
+    Rectangle
 )
 
 import matplotlib.pyplot as plt
@@ -42,3 +44,56 @@ def crop_inner_background(image: np.ndarray, slice: Optional[Slice2D] = None,
     image = image[slice.rows, :]
     image = image[:, slice.columns]
     return image, slice
+
+
+def crop_minimum_roi(image: np.ndarray, rectangle: Optional[Rectangle] = None,
+                     background_value: int = 255) -> Tuple[np.ndarray, Rectangle]:
+    if rectangle is None:
+        gray = cv2.cvtColor(image, code=cv2.COLOR_RGB2GRAY)
+        _, roi = cv2.threshold(gray, thresh=background_value - 1, maxval=image.max(), type=cv2.THRESH_BINARY_INV)
+        contours, _ = cv2.findContours(roi, mode=cv2.RETR_LIST, method=cv2.CHAIN_APPROX_SIMPLE)
+        rectangle = cv2.minAreaRect(points=np.concatenate(contours))
+        rectangle = Rectangle(center_x=rectangle[0][0],
+                              center_y=rectangle[0][1],
+                              width=rectangle[1][0],
+                              height=rectangle[1][1],
+                              angle=rectangle[2])
+
+    z = image.copy()
+    bbox = cv2.boxPoints(box=rectangle.to_cv2())
+    cv2.drawContours(z, [np.int0(bbox)], 0, (0, 255, 255), 4)
+    cv2.circle(z, (int(rectangle.center_x), int(rectangle.center_y)), radius=30, color=(255, 0, 0), thickness=-1)
+    show(z)
+
+    height, width = image.shape[:2]
+    center_x, center_y = (width // 2, height // 2)
+    transform = cv2.getRotationMatrix2D(center=(center_x, center_y), angle=rectangle.angle, scale=1)
+    cos = np.abs(transform[0, 0])
+    sin = np.abs(transform[0, 1])
+    nW = int((height * sin) + (width * cos))
+    nH = int((height * cos) + (width * sin))
+    transform[0, 2] += (nW / 2) - center_x
+    transform[1, 2] += (nH / 2) - center_y
+
+    warped = cv2.warpAffine(src=image, M=transform, dsize=(nW, nH))
+
+    calculated = np.dot(transform, np.array([rectangle.center_x, rectangle.center_y, 1]).T)
+    rectangle2 = Rectangle(
+        center_x=calculated[0],
+        center_y=calculated[1],
+        width=rectangle.width,
+        height=rectangle.height,
+        angle=0
+    )
+    z = warped.copy()
+    bbox = cv2.boxPoints(box=rectangle2.to_cv2())
+    cv2.drawContours(z, [np.int0(bbox)], 0, (0, 255, 255), 4)
+    cv2.circle(z, (int(rectangle2.center_x), int(rectangle2.center_y)), radius=30, color=(255, 0, 0), thickness=-1)
+    show(z)
+
+    a = 4
+
+
+
+
+    return image, rectangle

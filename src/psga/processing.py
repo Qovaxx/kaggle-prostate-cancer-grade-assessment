@@ -7,7 +7,8 @@ import numpy as np
 from .transforms.entity import Intermediates
 from .transforms.background import (
     crop_external_background,
-    crop_inner_background
+    crop_inner_background,
+    crop_minimum_roi
 )
 
 import matplotlib.pyplot as plt
@@ -47,6 +48,10 @@ def compose_preprocessing(image: np.ndarray, intermediates: Intermediates = Inte
         image = _reduce_memory(image)
 
     image, slice = crop_inner_background(image, slice=intermediates.inner_slice)
+    if reduce_memory:
+        image = _reduce_memory(image)
+
+    image, rectangle = crop_minimum_roi(image, rectangle=intermediates.roi_rectangle)
     if reduce_memory:
         image = _reduce_memory(image)
 
