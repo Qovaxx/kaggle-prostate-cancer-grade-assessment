@@ -1,17 +1,7 @@
-from skimage.io import MultiImage
-from openslide import OpenSlide
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
-show(image2.read_region((1780,1950), 0, (256, 256)))
+from src.psga.utils.pickle import load_pickle
+from pathlib import Path
 
-path = "/data/raw/prostate-cancer-grade-assessment/train_label_masks/418e6b6e39af708710e1e497ca629ee8_mask.tiff"
-
-
-image = MultiImage(path)
-image2 = OpenSlide(path)
-
+path = Path("/data/processed/prostate-cancer-grade-assessment/temp").iterdir()
+meta = [load_pickle(str(x)) for x in path]
 
 a = 4
