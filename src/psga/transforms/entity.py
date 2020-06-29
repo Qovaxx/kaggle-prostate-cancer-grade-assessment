@@ -95,12 +95,15 @@ class TissueObjects(BaseEntity):
 class Intermediates(BaseEntity):
     external_bbox: Optional[BBox] = field(default=None)
     inner_slice: Optional[Slice2D] = field(default=None)
-    tissue_objects: Optional[TissueObjects] = field(default=None)
+    rough_tissue_objects: Optional[TissueObjects] = field(default=None)
     clear_mask: Optional[np.ndarray] = field(default=None)
+    precise_tissue_objects: Optional[TissueObjects] = field(default=None)
 
     def rescale(self, scale: int) -> NoReturn:
         self.external_bbox.rescale(scale)
         self.inner_slice.rescale(scale)
-        self.tissue_objects.rescale(scale)
+        self.rough_tissue_objects.rescale(scale)
+        self.precise_tissue_objects.rescale(scale)
+
         shape = tuple(np.asarray(self.clear_mask.shape) * scale)
         self.clear_mask = cv2.resize(self.clear_mask, dsize=shape[::-1], interpolation=cv2.INTER_NEAREST)

@@ -44,19 +44,27 @@ def dual_compose_preprocessing(large_image: np.ndarray, small_image: np.ndarray
 
 def compose_preprocessing(image: np.ndarray, intermediates: Intermediates = Intermediates(),
                           reduce_memory: bool = False)-> Tuple[np.ndarray, Intermediates]:
+    show(image)
     image, bbox = crop_external_background(image, bbox=intermediates.external_bbox)
     if reduce_memory:
         image = _reduce_memory(image)
 
+    show(image)
     image, slice = crop_inner_background(image, slice=intermediates.inner_slice)
     if reduce_memory:
         image = _reduce_memory(image)
 
-    image, tissue_objects = convert_to_atlas(image, tissue_objects=intermediates.tissue_objects)
+    show(image)
+    image, rough_tissue_objects = convert_to_atlas(image, tissue_objects=intermediates.rough_tissue_objects)
     if reduce_memory:
         image = _reduce_memory(image)
 
+    show(image)
     image, mask = remove_gray_and_penmarks(image, mask=intermediates.clear_mask)
+    show(image)
+    image, precise_tissue_objects = convert_to_atlas(image, tissue_objects=intermediates.precise_tissue_objects,
+                                                     not_background_mask=mask)
 
-    intermediates = Intermediates(bbox, slice, tissue_objects, mask)
+    show(image)
+    intermediates = Intermediates(bbox, slice, rough_tissue_objects, mask, precise_tissue_objects)
     return image, intermediates
