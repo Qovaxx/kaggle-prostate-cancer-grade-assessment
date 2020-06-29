@@ -223,6 +223,11 @@ def compose_preprocessing(master_image: IMAGE_TYPE, minion_image: IMAGE_TYPE,
     # master_image_clear = F.apply_mask(master_image_roi, mask=scaled_tissue_mask, add=background_value)
     # master_mask_clear = F.apply_mask(master_mask_roi, mask=scaled_tissue_mask) if master_mask_roi is not None else None
     #
+
+
+
+
+
     # minion_image_atlas, minion_mask_atlas, contours = convert_to_atlas(image=minion_image_clear,
     #                                                                    mask=minion_mask_clear,
     #                                                                    tissue_mask=tissue_mask)

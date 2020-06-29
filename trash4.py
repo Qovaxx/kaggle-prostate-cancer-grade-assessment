@@ -37,7 +37,7 @@ from src.psga.processing import dual_compose_preprocessing
 
 # mimic_kaggle_kernel_specs(cpu=False)
 
-name = "f948e5f2b0a49af2c0a7f3f74093262e"
+name = "726027a4c8a859b5d38ab6f4d42b8dba"
 image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
 
 large_image = get_layer_safely(image_slide, layer=0)

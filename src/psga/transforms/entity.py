@@ -17,7 +17,6 @@ import cv2
 import numpy as np
 
 
-
 class BaseEntity(ABC):
 
     @abstractmethod
@@ -54,7 +53,6 @@ class Slice2D(BaseEntity):
         slice_vector = cv2.resize(slice_vector, dsize=(1, new_size), interpolation=cv2.INTER_NEAREST)
         return slice_vector.astype(np.bool).ravel().tolist()
 
-
 @dataclass
 class Rectangle(BaseEntity):
     center_x: float
@@ -80,13 +78,26 @@ class Rectangle(BaseEntity):
         self.width *= scale
         self.height *= scale
 
+
+@dataclass
+class TissueObject(BaseEntity):
+    mask: np.ndarray
+    rectangle: Rectangle
+
+
+    def rescale(self, scale: int) -> NoReturn:
+        a = 4
+
+
+
 @dataclass
 class Intermediates(BaseEntity):
     external_bbox: Optional[BBox] = field(default=None)
     inner_slice: Optional[Slice2D] = field(default=None)
-    roi_rectangle: Optional[Rectangle] = field(default=None)
+    tissue_objects: Optional[List[TissueObject]] = field(default=None)
 
     def rescale(self, scale: int) -> NoReturn:
         self.external_bbox.rescale(scale)
         self.inner_slice.rescale(scale)
-        self.roi_rectangle.rescale(scale)
+        for contour in self.tissue_objects:
+            contour.rescale(scale)
