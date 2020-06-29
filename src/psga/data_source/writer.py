@@ -48,12 +48,12 @@ class TIFFWriter(BaseWriter):
             eda_path.parent.mkdir(parents=True, exist_ok=True)
             if eda_path.exists():
                 os.remove(str(eda_path))
-            Image.fromarray(record.eda).save(str(eda_path), quality=self._quality, subsampling=0)
+            Image.fromarray(record.visualization).save(str(eda_path), quality=self._quality, subsampling=0)
 
         meta = asdict(record)
         meta["utils"] = self._to_relative(image_path)
         meta["mask"] = self._to_relative(mask_path) if record.mask is not None else None,
-        meta["eda"] = self._to_relative(eda_path) if record.eda is not None else None,
+        meta["eda"] = self._to_relative(eda_path) if record.visualization is not None else None,
         return meta
 
 

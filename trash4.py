@@ -39,7 +39,7 @@ from src.psga.processing import dual_compose_preprocessing
 # 1f368e9829e850bd6b6de7a521376720  косяк на краю
 
 
-mimic_kaggle_kernel_specs(cpu=False)
+# mimic_kaggle_kernel_specs(cpu=False)
 
 name = "a6a7146bd23b394f54a5950d2dbefa7b"
 image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
