@@ -8,7 +8,7 @@ import rectpack
 import numpy as np
 
 from .misc import apply_mask
-from .rectangle import fast_crop_rectangle, crop_rectangle
+from .rectangle import fast_crop_rectangle
 from ..entity import TissueObject
 
 __all__ = ["create_bin", "pack_atlas"]
@@ -67,4 +67,4 @@ def pack_atlas(image: np.ndarray, tissue_objects: List[TissueObject]) -> np.ndar
             crop = np.rot90(crop)
         atlas[y: y + h, x: x + w] = crop
 
-    return image
+    return atlas

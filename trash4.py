@@ -37,13 +37,19 @@ from src.psga.processing import dual_compose_preprocessing
 
 # mimic_kaggle_kernel_specs(cpu=False)
 
-name = "726027a4c8a859b5d38ab6f4d42b8dba"
+name = "680984934a44ffcfc33f21b9b62f9436"
 image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
 
 large_image = get_layer_safely(image_slide, layer=0)
 small_image = get_layer_safely(image_slide, layer=2)
+show(small_image)
+from time import time
 
+start = time()
 large_image, intermediates = dual_compose_preprocessing(large_image, small_image)
+print(time() - start)
+
+show(large_image)
 
 a = 4
 
