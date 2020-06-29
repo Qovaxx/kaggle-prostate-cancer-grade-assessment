@@ -47,6 +47,6 @@ def remove_gray_and_penmarks(image: np.ndarray, mask: Optional[np.ndarray] = Non
     if len(image.shape) == 3:
         image = F.apply_mask(image, mask=mask, add=background_value)
     else:
-        image = F.apply_mask(mask, mask=mask)
+        image = F.apply_mask(image, mask=mask)
 
     return image, mask

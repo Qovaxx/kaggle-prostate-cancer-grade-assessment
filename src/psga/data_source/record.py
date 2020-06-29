@@ -17,7 +17,7 @@ from src.psga.phase import Phase
 class Record(object):
     image: np.ndarray
     mask: Optional[np.ndarray] = field(default=None)
-    eda: Optional[np.ndarray] = field(default=None)
+    visualization: Optional[np.ndarray] = field(default=None)
     name: Optional[str] = field(default=None)  # name. id. etc - must be unique
     label: Optional[int] = field(default=None)
     fold: Optional[int] = field(default=None)
