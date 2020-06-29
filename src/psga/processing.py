@@ -8,8 +8,7 @@ from .transforms.entity import Intermediates
 from .transforms.atlas import convert_to_atlas
 from .transforms.background import (
     crop_external_background,
-    crop_inner_background,
-    crop_minimum_roi
+    crop_inner_background
 )
 
 import matplotlib.pyplot as plt
@@ -37,7 +36,7 @@ def dual_compose_preprocessing(large_image: np.ndarray, small_image: np.ndarray
     gc.collect()
 
     intermediates.rescale(scale)
-    large_image, intermediates = compose_preprocessing(large_image, intermediates, reduce_memory=False)
+    large_image, intermediates = compose_preprocessing(large_image, intermediates, reduce_memory=True)
 
     return large_image, intermediates
 
