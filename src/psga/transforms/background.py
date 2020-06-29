@@ -12,15 +12,6 @@ from .entity import (
     Slice2D,
     Rectangle
 )
-from ..settings import CV2_MAX_IMAGE_SIZE
-
-from time import time
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
-
 
 
 def crop_external_background(image: np.ndarray, bbox: Optional[BBox] = None,
@@ -33,9 +24,7 @@ def crop_external_background(image: np.ndarray, bbox: Optional[BBox] = None,
                     width=width_indices[-1] - width_indices[0],
                     height=height_indices[-1] - height_indices[0])
 
-    print(f"crop bbox begin {image.shape}")
     image = F.crop_bbox(image, bbox)
-    print(f"crop cropped {image.shape}")
     return image, bbox
 
 
@@ -46,9 +35,7 @@ def crop_inner_background(image: np.ndarray, slice: Optional[Slice2D] = None,
         to_boolist = lambda axis: [x.all() for x in ~np.all(background_mask, axis=axis)]
         slice = Slice2D(rows=to_boolist(axis=1), columns=to_boolist(axis=0))
 
-    print(f"crop slice begin {image.shape}")
     image = F.crop_slice(image, slice)
-    print(f"slice cropped {image.shape}")
     return image, slice
 
 
@@ -65,13 +52,8 @@ def crop_minimum_roi(image: np.ndarray, rectangle: Optional[Rectangle] = None,
                               height=rectangle[1][1],
                               angle=rectangle[2])
 
-    show(image)
-    print(f"crop rectangle begin {image.shape}")
-
-    start = time()
     sub_images = list()
     bbox = cv2.boxPoints(box=rectangle.to_cv2_rect())
-
     for corner in bbox:
         sub_rectangle_center = np.mean([corner, [rectangle.center_x, rectangle.center_y]], axis=0)
         sub_rectangle = Rectangle(center_x=sub_rectangle_center[0],
@@ -93,17 +75,8 @@ def crop_minimum_roi(image: np.ndarray, rectangle: Optional[Rectangle] = None,
         sub_image = F.crop_bbox(image, sub_box)
         sub_images.append(F.crop_rectangle(sub_image, sub_rectangle, is_mask=is_mask))
 
-    image1 = np.vstack([
+    image = np.vstack([
         np.hstack([sub_images[1], sub_images[2]]),
         np.hstack([sub_images[0], sub_images[3]])
     ])
-    print(time() - start)
-
-    start = time()
-    image2 = F.crop_rectangle(image, rectangle, is_mask=is_mask)
-    print(time() - start)
-
-    print(f"rectangle cropped {image.shape}")
-    show(image1)
-    show(image2)
     return image, rectangle

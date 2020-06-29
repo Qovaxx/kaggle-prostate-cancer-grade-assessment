@@ -7,12 +7,6 @@ from .entity import (
     Rectangle
 )
 
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
-
 
 def crop_bbox(image: np.ndarray, bbox: BBox, with_padding: bool = False) -> np.ndarray:
     x_max = bbox.x + bbox.width
@@ -39,8 +33,9 @@ def crop_bbox(image: np.ndarray, bbox: BBox, with_padding: bool = False) -> np.n
 
 
 def crop_slice(image: np.ndarray, slice: Slice2D) -> np.ndarray:
-    image = image[slice.rows, :]
-    return image[:, slice.columns]
+    image = np.take(image, indices=np.asarray(slice.rows).nonzero()[0], axis=0)
+    image = np.take(image, indices=np.asarray(slice.columns).nonzero()[0], axis=1)
+    return image
 
 
 def crop_rectangle(image: np.ndarray, rectangle: Rectangle, is_mask: bool = False) -> np.ndarray:
