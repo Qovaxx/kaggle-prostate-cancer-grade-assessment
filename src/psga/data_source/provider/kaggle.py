@@ -5,6 +5,12 @@ from typing import (
     Optional,
     Tuple,
 )
+from functools import partial
+from multiprocessing import (
+    Pool,
+    Manager,
+)
+
 from tqdm import tqdm
 
 import cv2
@@ -62,25 +68,29 @@ class PSGADataAdapter(BaseDataAdapter):
 
     def __init__(self, path: str, writer: BaseWriter, verbose: bool = False) -> NoReturn:
         super().__init__(path, writer, verbose)
+        self._mp_namespace = Manager().Namespace()
+        self._mp_namespace.self = self
 
-    def convert(self) -> NoReturn:
+    def convert(self, processes: int = 1) -> NoReturn:
         to_paths = lambda path: sorted(path.rglob("*"))
         image_paths = to_paths(self._path / "train_images")
         mask_paths = to_paths(self._path / "train_label_masks")
         mask_path_map = {x.stem.replace("_mask", ""): x for x in mask_paths}
         pairs = [(x, mask_path_map.get(x.stem, None)) for x in image_paths]
         train_meta = pd.read_csv(self._path / "train.csv")
+        self._mp_namespace.train_meta = train_meta
 
-        iter = pairs[:10]
-        if self._verbose:
-            iter = tqdm(iter, total=len(iter), desc="Converted: ")
+        with Pool(processes) as p:
+            run = lambda x: list(tqdm(x, total=len(pairs), desc="Converted: ")) if self._verbose else lambda x: x
+            run(p.imap(partial(self._worker, namespace=self._mp_namespace), pairs))
 
-        for paths in iter:
-            self._worker(paths, train_meta)
+        print("flush")
+        # self._writer.flush(count_samples_from="images/*/*")
 
-        self._writer.flush(count_samples_from="images/*/*")
-
-    def _worker(self, paths: Tuple[Path, Optional[Path]], train_meta: pd.DataFrame) -> NoReturn:
+    @staticmethod
+    def _worker(paths: Tuple[Path, Optional[Path]], namespace) -> NoReturn:
+        self = namespace.self
+        train_meta = namespace.train_meta
         image_path, mask_path = paths
         name = image_path.stem
         mask_path = Path(str(image_path).replace("train_images", "train_label_masks").replace(".tiff", "_mask.tiff"))
