@@ -66,13 +66,6 @@ def crop_minimum_roi(image: np.ndarray, rectangle: Optional[Rectangle] = None,
                               angle=rectangle[2])
 
     print(f"crop rectangle begin {image.shape}")
-    z = image.copy()
-    zbbox = cv2.boxPoints(box=rectangle.to_cv2_rect())
-    cv2.drawContours(z, [np.int0(zbbox)], 0, (0, 255, 255), 4)
-    cv2.circle(z, center=(int(rectangle.center_x), int(rectangle.center_y)),
-               radius=30, color=(255, 0, 0), thickness=-1)
-    show(z)
-
     if max(image.shape) >= 12:
         sub_images = list()
         bbox = cv2.boxPoints(box=rectangle.to_cv2_rect())
@@ -86,24 +79,19 @@ def crop_minimum_roi(image: np.ndarray, rectangle: Optional[Rectangle] = None,
                                       angle=rectangle.angle)
 
             sub_box = np.int0(cv2.boxPoints(box=sub_rectangle.to_cv2_rect()))
-            x_indices = sub_box[:, 0]
-            y_indices = sub_box[:, 1]
-            sub_image = image[
-                        np.max([0, min(y_indices)]): np.min([image.shape[0], max(y_indices)]),
-                        np.max([0, min(x_indices)]): np.min([image.shape[1], max(x_indices)])
-                        ]
-            sub_rectangle.center_x -= min(x_indices)
-            sub_rectangle.center_y -= min(y_indices)
-
-            z = sub_image.copy()
-            zbbox = cv2.boxPoints(box=sub_rectangle.to_cv2_rect())
-            cv2.drawContours(z, [np.int0(zbbox)], 0, (0, 255, 255), 4)
-            cv2.circle(z, center=(int(sub_rectangle.center_x), int(sub_rectangle.center_y)),
-                       radius=30, color=(255, 0, 0), thickness=-1)
-            show(z)
-
-
+            corners_x, corners_y = sub_box[:, 0], sub_box[:, 1]
+            min_x, min_y, max_x, max_y = min(corners_x), min(corners_y), max(corners_x), max(corners_y)
+            sub_box = BBox(x=max(0, min_x),
+                           y=max(0, min_y),
+                           width=min(image.shape[1], max_x - min_x),
+                           height=min(image.shape[0], max_y - min_y))
+            sub_rectangle.center_x -= min(corners_x)
+            sub_rectangle.center_y -= min(corners_y)
+            sub_image = F.crop_bbox(image, sub_box)
             sub_images.append(F.crop_rectangle(sub_image, sub_rectangle, is_mask=is_mask))
+
+        for zs in sub_images:
+            show(zs)
 
         image = np.vstack([
             np.hstack([sub_images[1], sub_images[2]]),
