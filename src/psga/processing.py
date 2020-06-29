@@ -6,6 +6,7 @@ import numpy as np
 
 from .transforms.entity import Intermediates
 from .transforms.atlas import convert_to_atlas
+from .transforms.clear import remove_gray_and_penmarks
 from .transforms.background import (
     crop_external_background,
     crop_inner_background
@@ -18,7 +19,7 @@ def show(image):
     plt.show()
 
 
-def _reduce_memory(image: np.ndarray):
+def _reduce_memory(image: np.ndarray) -> np.ndarray:
     image_gpu = torch.from_numpy(image).cuda()
     del image
     gc.collect()
@@ -55,5 +56,7 @@ def compose_preprocessing(image: np.ndarray, intermediates: Intermediates = Inte
     if reduce_memory:
         image = _reduce_memory(image)
 
-    intermediates = Intermediates(bbox, slice, tissue_objects)
+    image, mask = remove_gray_and_penmarks(image, mask=intermediates.clear_mask)
+
+    intermediates = Intermediates(bbox, slice, tissue_objects, mask)
     return image, intermediates
