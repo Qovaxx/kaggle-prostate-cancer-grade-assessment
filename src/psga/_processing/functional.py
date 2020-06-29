@@ -105,7 +105,7 @@ def crop_rectangle_old(image: IMAGE_TYPE, rectangle: CV2_RECT_TYPE,
     box = image_to_tensor(cv2.boxPoints(box=rectangle))
     width = int(rectangle[1][0])
     height = int(rectangle[1][1])
-    reference_bbox = image_to_tensor(np.array([[0, height - 1], [0, 0], [width - 1, 0], [width - 1, height - 1]],
+    redl1ference_bbox = image_to_tensor(np.array([[0, height - 1], [0, 0], [width - 1, 0], [width - 1, height - 1]],
                                               dtype=np.float32))
     image_tensor = image_to_tensor(image, keepdim=False)
     transformation_matrix = get_perspective_transform(src=box, dst=reference_bbox)

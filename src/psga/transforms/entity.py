@@ -63,14 +63,22 @@ class Rectangle(BaseEntity):
     height: float
     angle: float
 
-    def to_cv2(self) -> Tuple[Tuple[float, float], Tuple[float, float], float]:
+    def to_d4_bbox(self) -> Optional[BBox]:
+        if self.angle % 90 == 0:
+            return BBox(x=int(self.center_x - (self.width / 2)),
+                        y=int(self.center_y - (self.height / 2)),
+                        width=int(self.width),
+                        height=int(self.height))
+        return None
+
+    def to_cv2_rect(self) -> Tuple[Tuple[float, float], Tuple[float, float], float]:
         return ((self.center_x, self.center_y), (self.width, self.height), self.angle)
 
     def rescale(self, scale: int) -> NoReturn:
-
-
-        a = 4
-
+        self.center_x *= scale
+        self.center_y *= scale
+        self.width *= scale
+        self.height *= scale
 
 @dataclass
 class Intermediates(BaseEntity):
