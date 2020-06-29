@@ -14,13 +14,6 @@ from .entity import (
 )
 
 
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
-
-
 def convert_to_atlas(image: np.ndarray, tissue_objects: Optional[TissueObjects] = None,
                      not_background_mask: Optional[np.ndarray] = None,
                      min_contour_area: int = 200,
