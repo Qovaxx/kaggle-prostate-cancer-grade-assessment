@@ -22,12 +22,15 @@ def show(image):
 
 
 def convert_to_atlas(image: np.ndarray, tissue_objects: Optional[TissueObjects] = None,
+                     not_background_mask: Optional[np.ndarray] = None,
                      min_contour_area: int = 200,
                      background_value: int = 255) -> Tuple[np.ndarray, TissueObjects]:
     if tissue_objects is None:
-        gray = cv2.cvtColor(image, code=cv2.COLOR_RGB2GRAY)
-        _, not_background_mask = cv2.threshold(gray, thresh=background_value - 1, maxval=image.max(),
-                                               type=cv2.THRESH_BINARY_INV)
+        if not_background_mask is None:
+            gray = cv2.cvtColor(image, code=cv2.COLOR_RGB2GRAY)
+            _, not_background_mask = cv2.threshold(gray, thresh=background_value - 1, maxval=image.max(),
+                                                   type=cv2.THRESH_BINARY_INV)
+
         found_contours, _ = cv2.findContours(not_background_mask, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
         rectangles = list()
         mask = np.full(image.shape[:2], fill_value=0, dtype=np.uint8)

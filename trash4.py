@@ -41,12 +41,11 @@ from src.psga.processing import dual_compose_preprocessing
 
 # mimic_kaggle_kernel_specs(cpu=False)
 
-name = "8b90a3312d9fc702a9ec8236e23065c7"
+name = "8cc5179031ebbf5704f2cc33476dd5be"
 image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
 
 large_image = get_layer_safely(image_slide, layer=0)
 small_image = get_layer_safely(image_slide, layer=2)
-show(small_image)
 print(large_image.shape)
 
 
