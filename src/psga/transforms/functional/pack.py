@@ -9,7 +9,7 @@ import numpy as np
 
 from .misc import apply_mask
 from .rectangle import fast_crop_rectangle
-from ..entity import TissueObject
+from ..entity import TissueObjects
 
 __all__ = ["create_bin", "pack_atlas"]
 
@@ -23,9 +23,9 @@ def show(image):
     plt.show()
 
 
-def create_bin(tissue_objects: List[TissueObject], step_size: int = 10
+def create_bin(tissue_objects: TissueObjects, step_size: int = 10
                ) -> Tuple[Tuple[int, int], List[RECTPACK_RECT_TYPE]]:
-    sides = [(int(obj.rectangle.width), int(obj.rectangle.height)) for obj in tissue_objects]
+    sides = [(int(rect.width), int(rect.height)) for rect in tissue_objects.rectangles]
     sides = list(chain(*sides))
     height = max(sides)
     width = min(sides)
@@ -36,11 +36,11 @@ def create_bin(tissue_objects: List[TissueObject], step_size: int = 10
                                     sort_algo=rectpack.SORT_LSIDE,
                                     rotation=True)
         packer.add_bin(width=width, height=height)
-        for index, obj in enumerate(tissue_objects):
-            packer.add_rect(width=int(obj.rectangle.width), height=int(obj.rectangle.height), rid=index)
+        for index, rect in enumerate(tissue_objects.rectangles):
+            packer.add_rect(width=int(rect.width), height=int(rect.height), rid=index)
 
         packer.pack()
-        if len(tissue_objects) == len(packer[0].rectangles):
+        if len(tissue_objects.rectangles) == len(packer[0].rectangles):
             break
         else:
             width += step_size
@@ -48,12 +48,13 @@ def create_bin(tissue_objects: List[TissueObject], step_size: int = 10
     return (height, width), packer.rect_list()
 
 
-def pack_atlas(image: np.ndarray, tissue_objects: List[TissueObject]) -> np.ndarray:
+def pack_atlas(image: np.ndarray, tissue_objects: TissueObjects) -> np.ndarray:
     fill_value = 255 if len(image.shape) == 3 else 0
     crops = list()
-    for obj in tissue_objects:
-        contoured_image = apply_mask(image, mask=obj.mask.astype(np.uint8), add=fill_value)
-        crops.append(fast_crop_rectangle(contoured_image, obj.rectangle))
+    for index, rectangle in enumerate(tissue_objects.rectangles):
+        mask = (tissue_objects.mask == index + 1).astype(np.uint8)
+        contoured_image = apply_mask(image, mask=mask, add=fill_value)
+        crops.append(fast_crop_rectangle(contoured_image, rectangle))
 
     shape, rectangles = create_bin(tissue_objects)
     if len(image.shape) == 3:
