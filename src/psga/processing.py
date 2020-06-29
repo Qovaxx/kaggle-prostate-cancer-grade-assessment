@@ -37,7 +37,7 @@ def dual_compose_preprocessing(large_image: np.ndarray, small_image: np.ndarray
     gc.collect()
 
     intermediates.rescale(scale)
-    large_image, intermediates = compose_preprocessing(large_image, intermediates, reduce_memory=True)
+    large_image, intermediates = compose_preprocessing(large_image, intermediates, reduce_memory=False)
 
     return large_image, intermediates
 
@@ -52,15 +52,9 @@ def compose_preprocessing(image: np.ndarray, intermediates: Intermediates = Inte
     if reduce_memory:
         image = _reduce_memory(image)
 
-    image, contours = convert_to_atlas(image, tissue_objects=intermediates.tissue_objects)
+    image, tissue_objects = convert_to_atlas(image, tissue_objects=intermediates.tissue_objects)
     if reduce_memory:
         image = _reduce_memory(image)
 
-
-    # image, rectangle = crop_minimum_roi(image, rectangle=intermediates.roi_rectangle)
-    # if reduce_memory:
-    #     image = _reduce_memory(image)
-
-
-    intermediates = Intermediates(bbox, slice, contours)
+    intermediates = Intermediates(bbox, slice, tissue_objects)
     return image, intermediates

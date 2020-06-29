@@ -84,11 +84,11 @@ class TissueObject(BaseEntity):
     mask: np.ndarray
     rectangle: Rectangle
 
-
-    def rescale(self, scale: int) -> NoReturn:
-        a = 4
-
-
+    def rescale(self, scale: int, **kwargs) -> NoReturn:
+        shape = tuple(np.asarray(self.mask.shape) * scale)
+        mask = self.mask.astype(np.uint8)
+        self.mask = cv2.resize(mask, dsize=shape[::-1], interpolation=cv2.INTER_NEAREST).astype(np.bool)
+        self.rectangle.rescale(scale)
 
 @dataclass
 class Intermediates(BaseEntity):
@@ -99,5 +99,5 @@ class Intermediates(BaseEntity):
     def rescale(self, scale: int) -> NoReturn:
         self.external_bbox.rescale(scale)
         self.inner_slice.rescale(scale)
-        for contour in self.tissue_objects:
-            contour.rescale(scale)
+        for obj in self.tissue_objects:
+            obj.rescale(scale)

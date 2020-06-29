@@ -8,6 +8,12 @@ from ..entity import (
 
 __all__ = ["apply_mask", "crop_bbox", "crop_slice"]
 
+import matplotlib.pyplot as plt
+def show(image):
+    plt.figure()
+    plt.imshow(image)
+    plt.show()
+
 
 def apply_mask(image: np.ndarray, mask: np.ndarray, add: int = 0) -> np.ndarray:
     return cv2.bitwise_and(src1=image, src2=image, mask=mask) + add
