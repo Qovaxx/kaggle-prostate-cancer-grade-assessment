@@ -4,6 +4,7 @@ from typing import (
     List
 )
 
+import cv2
 import rectpack
 import numpy as np
 
@@ -50,6 +51,9 @@ def create_bin(tissue_objects: TissueObjects, step_size: int = 10
 
 def pack_atlas(image: np.ndarray, tissue_objects: TissueObjects) -> np.ndarray:
     fill_value = 255 if len(image.shape) == 3 else 0
+    if image.shape[:2] != tissue_objects.mask.shape:
+        tissue_objects.mask = cv2.resize(tissue_objects.mask, dsize=image.shape[:2][::-1], interpolation=cv2.INTER_NEAREST)
+
     crops = list()
     for index, rectangle in enumerate(tissue_objects.rectangles):
         mask = (tissue_objects.mask == index + 1).astype(np.uint8)

@@ -9,12 +9,6 @@ from skimage import morphology
 
 from . import functional as F
 
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
-
 
 def remove_gray_and_penmarks(image: np.ndarray, mask: Optional[np.ndarray] = None,
                              kernel_size: Tuple[int, int] = (5, 5), holes_objects_threshold_size: int = 100,
