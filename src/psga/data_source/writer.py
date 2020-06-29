@@ -7,14 +7,13 @@ from typing import (
 )
 
 from PIL import Image
-from pyvips.enums import ForeignTiffCompression
 from typing_extensions import final
 
 from .base import BaseWriter
 from .record import Record
-from ..utils import vips
+from ..utils import tiff
 
-import os
+
 @final
 class TIFFWriter(BaseWriter):
 
@@ -27,33 +26,22 @@ class TIFFWriter(BaseWriter):
         relative_path = Path(str(record.label)) / record.name
         image_path = (self.images_path / relative_path).with_suffix(".tiff")
         mask_path = (self.masks_path / relative_path).with_suffix(".tiff")
-        eda_path = (self.eda_path / relative_path).with_suffix(".jpg")
+        visualization_path = (self.visualizations_path / relative_path).with_suffix(".jpg")
 
         image_path.parent.mkdir(parents=True, exist_ok=True)
-        if image_path.exists():
-            os.remove(str(image_path))
-        vips.from_numpy(record.image).write_to_file(str(image_path),
-                                                    bigtiff=True, compression=ForeignTiffCompression.JPEG, Q=self._quality,
-                                                    tile=True, tile_width=self._tile_size, tile_height=self._tile_size,
-                                                    rgbjpeg=True)
+        tiff.save_tiff_image(record.image, path=str(image_path), quality=self._quality, tile_size=self._tile_size)
+
         if record.mask is not None:
             mask_path.parent.mkdir(parents=True, exist_ok=True)
-            if mask_path.exists():
-                os.remove(str(mask_path))
-            vips.from_numpy(record.mask).write_to_file(str(mask_path),
-                                                       bigtiff=True, compression=ForeignTiffCompression.LZW,
-                                                       tile=True, tile_width=self._tile_size, tile_height=self._tile_size,
-                                                       rgbjpeg=False)
+            tiff.save_tiff_mask(record.mask, path=str(mask_path), tile_size=self._tile_size)
 
-            eda_path.parent.mkdir(parents=True, exist_ok=True)
-            if eda_path.exists():
-                os.remove(str(eda_path))
-            Image.fromarray(record.visualization).save(str(eda_path), quality=self._quality, subsampling=0)
+            visualization_path.parent.mkdir(parents=True, exist_ok=True)
+            Image.fromarray(record.visualization).save(str(visualization_path), quality=self._quality, subsampling=0)
 
         meta = asdict(record)
-        meta["utils"] = self._to_relative(image_path)
-        meta["mask"] = self._to_relative(mask_path) if record.mask is not None else None,
-        meta["eda"] = self._to_relative(eda_path) if record.visualization is not None else None,
+        meta["image"] = self._to_relative(image_path)
+        meta["mask"] = self._to_relative(mask_path) if record.mask is not None else None
+        meta["visualization"] = self._to_relative(visualization_path) if record.visualization is not None else None
         return meta
 
 

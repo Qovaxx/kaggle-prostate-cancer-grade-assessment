@@ -1,15 +1,9 @@
 from pathlib import Path
-from functools import partial
-from multiprocessing import (
-    Pool,
-    Manager,
-)
 from typing import (
     Dict,
     NoReturn,
     Optional,
     Tuple,
-    Union
 )
 from tqdm import tqdm
 
@@ -77,7 +71,7 @@ class PSGADataAdapter(BaseDataAdapter):
         pairs = [(x, mask_path_map.get(x.stem, None)) for x in image_paths]
         train_meta = pd.read_csv(self._path / "train.csv")
 
-        iter = pairs[2:]
+        iter = pairs[:10]
         if self._verbose:
             iter = tqdm(iter, total=len(iter), desc="Converted: ")
 
@@ -91,20 +85,20 @@ class PSGADataAdapter(BaseDataAdapter):
         name = image_path.stem
         mask_path = Path(str(image_path).replace("train_images", "train_label_masks").replace(".tiff", "_mask.tiff"))
 
-        image_slide = MultiImage(str(image_path))
-        mask_slide = MultiImage(str(mask_path))
-        large_image = get_layer_safely(image_slide, layer=0)
-        large_mask = get_layer_safely(mask_slide, layer=0, is_mask=True)
-        small_image = get_layer_safely(image_slide, layer=2)
-
-        if large_image is None:
-            return
-
-        if small_image is None:
-            scale = 1 / 16
-            small_image = cv2.resize(large_image, dsize=(0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
-
         try:
+            image_slide = MultiImage(str(image_path))
+            mask_slide = MultiImage(str(mask_path))
+            large_image = get_layer_safely(image_slide, layer=0)
+            large_mask = get_layer_safely(mask_slide, layer=0, is_mask=True)
+            small_image = get_layer_safely(image_slide, layer=2)
+
+            if large_image is None:
+                return
+
+            if small_image is None:
+                scale = 1 / 16
+                small_image = cv2.resize(large_image, dsize=(0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+
             large_image, intermediates = dual_compose_preprocessing(large_image, small_image, reduce_memory=False)
             if large_mask is not None:
                 large_mask, _ = compose_preprocessing(large_mask, intermediates=intermediates, reduce_memory=False)

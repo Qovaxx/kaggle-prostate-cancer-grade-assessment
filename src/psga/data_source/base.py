@@ -40,7 +40,7 @@ class BaseDataStructure(ABC):
 
     @property
     def data_path(self) -> Path:
-        return self._root / "data_source"
+        return self._root / "data"
 
     @property
     def meta_path(self) -> Path:
@@ -55,8 +55,8 @@ class BaseDataStructure(ABC):
         return self.data_path / "masks"
 
     @property
-    def eda_path(self) -> Path:
-        return self.data_path / "eda"
+    def visualizations_path(self) -> Path:
+        return self.data_path / "visualizations"
 
 
 class BaseWriter(BaseDataStructure):
@@ -90,7 +90,7 @@ class BaseWriter(BaseDataStructure):
             self.data_path.mkdir(parents=True, exist_ok=True)
             self.images_path.mkdir(exist_ok=True)
             self.masks_path.mkdir(exist_ok=True)
-            self.eda_path.mkdir(exist_ok=True)
+            self.visualizations_path.mkdir(exist_ok=True)
             self._temp_path.mkdir(exist_ok=True)
             self._dirs_exist = True
 
