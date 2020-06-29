@@ -3,6 +3,8 @@ from skimage.io import MultiImage
 from src.psga.utils.slide import get_layer_safely
 from src.psga.utils.pickle import load_pickle
 import matplotlib.pyplot as plt
+import numpy as np
+import gc
 
 
 def show(image):
@@ -34,22 +36,24 @@ square = load_pickle("/data/raw/square.pkl")
 
 from src.psga.processing import dual_compose_preprocessing
 
+# 1f368e9829e850bd6b6de7a521376720  косяк на краю
 
-# mimic_kaggle_kernel_specs(cpu=False)
 
-name = "680984934a44ffcfc33f21b9b62f9436"
+mimic_kaggle_kernel_specs(cpu=False)
+
+name = "1f368e9829e850bd6b6de7a521376720"
 image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
 
 large_image = get_layer_safely(image_slide, layer=0)
 small_image = get_layer_safely(image_slide, layer=2)
-show(small_image)
+
 from time import time
 
 start = time()
 large_image, intermediates = dual_compose_preprocessing(large_image, small_image)
 print(time() - start)
 
-show(large_image)
+# show(large_image)
 
 a = 4
 
