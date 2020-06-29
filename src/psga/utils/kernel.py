@@ -25,7 +25,7 @@ def mimic_kaggle_kernel_specs(cpu: bool = True, ram: bool = True) -> NoReturn:
     if cpu:
         system.limit_cpu(cpus=[0, 1], logical=True)
     if ram:
-        system.limit_ram(gigabytes=25.7)
+        system.limit_ram(gigabytes=22.8)
 
 
 class System(object):
