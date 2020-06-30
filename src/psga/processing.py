@@ -12,25 +12,17 @@ from .transforms.background import (
 )
 from .utils.memory import reduce_numpy_memory
 
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
-
 
 def dual_compose_preprocessing(large_image: np.ndarray, small_image: np.ndarray,
                                reduce_memory: bool = True,
                                )-> Tuple[np.ndarray, Intermediates]:
     scale = int(np.sqrt(large_image.size / small_image.size))
     small_image, intermediates = compose_preprocessing(small_image)
-    show(small_image)
     del small_image
     gc.collect()
 
     intermediates.rescale(scale)
     large_image, intermediates = compose_preprocessing(large_image, intermediates, reduce_memory=reduce_memory)
-    show(large_image)
     return large_image, intermediates
 
 
