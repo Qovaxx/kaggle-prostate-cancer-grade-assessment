@@ -37,13 +37,6 @@ from ...processing import (
 from ...phase import Phase
 from ...utils.slide import get_layer_safely
 
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
-
-
 
 SEGMENTATION_MAP: Final = {
     "radboud": {
@@ -75,43 +68,30 @@ class PSGADataAdapter(BaseDataAdapter):
 
     def __init__(self, path: str, writer: BaseWriter, verbose: bool = False) -> NoReturn:
         super().__init__(path, writer, verbose)
-        # self._mp_namespace = Manager().Namespace()
-        # self._mp_namespace.self = self
+        self._mp_namespace = Manager().Namespace()
+        self._mp_namespace.self = self
 
     def convert(self, processes: int = 1) -> NoReturn:
-        # to_paths = lambda path: sorted(path.rglob("*"))
-        # image_paths = to_paths(self._path / "train_images")
-        # mask_paths = to_paths(self._path / "train_label_masks")
-        # mask_path_map = {x.stem.replace("_mask", ""): x for x in mask_paths}
-        # pairs = [(x, mask_path_map.get(x.stem, None)) for x in image_paths]
-
-        # from src.psga.utils.pickle import load_pickle
-        # pairs = load_pickle("/data/processed/paths.pkl")
-
-        pairs = [
-         (Path('/data/raw/prostate-cancer-grade-assessment/train_images/953af5d0a03f8b2ef4c1d948ae48c368.tiff'),
-          Path(
-              '/data/raw/prostate-cancer-grade-assessment/train_label_masks/953af5d0a03f8b2ef4c1d948ae48c368_mask.tiff'))]
+        to_paths = lambda path: sorted(path.rglob("*"))
+        image_paths = to_paths(self._path / "train_images")
+        mask_paths = to_paths(self._path / "train_label_masks")
+        mask_path_map = {x.stem.replace("_mask", ""): x for x in mask_paths}
+        pairs = [(x, mask_path_map.get(x.stem, None)) for x in image_paths]
 
         train_meta = pd.read_csv(self._path / "train.csv")
-        # self._mp_namespace.train_meta = train_meta
+        self._mp_namespace.train_meta = train_meta
 
-        # with Pool(processes) as p:
-        #     run = lambda x: list(tqdm(x, total=len(pairs), desc="Converted: ")) if self._verbose else lambda x: x
-        #     run(p.imap(partial(self._worker, namespace=self._mp_namespace), pairs))
-        iter = pairs
-        if self._verbose:
-            iter = tqdm(iter, total=len(iter), desc="Converted: ")
-        for paths in iter:
-            self._worker(paths, train_meta)
+        with Pool(processes) as p:
+            run = lambda x: list(tqdm(x, total=len(pairs), desc="Converted: ")) if self._verbose else lambda x: x
+            run(p.imap(partial(self._worker, namespace=self._mp_namespace), pairs))
 
         print("flush")
         # self._writer.flush(count_samples_from="images/*/*")
 
-    # @staticmethod
-    def _worker(self, paths: Tuple[Path, Optional[Path]], train_meta) -> NoReturn:
-        # self = namespace.self
-        # train_meta = namespace.train_meta
+    @staticmethod
+    def _worker(paths: Tuple[Path, Optional[Path]], namespace) -> NoReturn:
+        self = namespace.self
+        train_meta = namespace.train_meta
         image_path, mask_path = paths
         name = image_path.stem
         mask_path = Path(str(image_path).replace("train_images", "train_label_masks").replace(".tiff", "_mask.tiff"))
@@ -158,7 +138,7 @@ class PSGADataAdapter(BaseDataAdapter):
 
             record = Record(large_image, large_mask, visualization, name, label, phase=Phase.TRAIN,
                             additional=additional)
-            # self._writer.put(record)
+            self._writer.put(record)
 
         except Exception as e:
             print(f"{name} - {e}")
