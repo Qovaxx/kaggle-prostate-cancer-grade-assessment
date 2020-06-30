@@ -13,7 +13,7 @@ def show(image):
     plt.show()
 
 
-square = load_pickle("/data/raw/square.pkl")
+# square = load_pickle("/data/raw/square.pkl")
 
 
 
@@ -41,21 +41,14 @@ from src.psga.processing import dual_compose_preprocessing
 
 # mimic_kaggle_kernel_specs(cpu=False)
 
-name = "a6a7146bd23b394f54a5950d2dbefa7b"
+name = "87cce4cbe31864141051ce2018ed29df"
 image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
 
 large_image = get_layer_safely(image_slide, layer=0)
 small_image = get_layer_safely(image_slide, layer=2)
-print(large_image.shape)
-
-
-from time import time
-
-start = time()
+show(small_image)
 large_image, intermediates = dual_compose_preprocessing(large_image, small_image)
-print(time() - start)
-print(large_image.shape)
-show(large_image) # 3.931934356689453
+
 
 a = 4
 
