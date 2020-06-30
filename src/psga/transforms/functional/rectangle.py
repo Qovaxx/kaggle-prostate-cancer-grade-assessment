@@ -4,13 +4,13 @@ import numpy as np
 from .misc import crop_bbox
 from ..entity import (
     BBox,
-    Rectangle
+    CV2Rectangle
 )
 
 __all__ = ["crop_rectangle", "fast_crop_rectangle"]
 
 
-def crop_rectangle(image: np.ndarray, rectangle: Rectangle) -> np.ndarray:
+def crop_rectangle(image: np.ndarray, rectangle: CV2Rectangle) -> np.ndarray:
     height, width = image.shape[:2]
     center_x, center_y = (width // 2, height // 2)
     transform = cv2.getRotationMatrix2D(center=(center_x, center_y), angle=rectangle.angle, scale=1)
@@ -32,27 +32,26 @@ def crop_rectangle(image: np.ndarray, rectangle: Rectangle) -> np.ndarray:
                            flags=flags, borderMode=cv2.BORDER_CONSTANT, borderValue=border_value)
 
     rotated_rectangle_center = np.dot(transform, np.array([rectangle.center_x, rectangle.center_y, 1]).T)
-    rotated_rectangle = Rectangle(center_x=rotated_rectangle_center[0],
-                                  center_y=rotated_rectangle_center[1],
-                                  width=rectangle.width,
-                                  height=rectangle.height,
-                                  angle=0)
+    rotated_rectangle = CV2Rectangle(center_x=rotated_rectangle_center[0],
+                                     center_y=rotated_rectangle_center[1],
+                                     width=rectangle.width,
+                                     height=rectangle.height,
+                                     angle=0)
     image = crop_bbox(image, bbox=rotated_rectangle.to_d4_bbox(), with_padding=True)
     return image
 
 
-def fast_crop_rectangle(image: np.ndarray, rectangle: Rectangle) -> np.ndarray:
+def fast_crop_rectangle(image: np.ndarray, rectangle: CV2Rectangle) -> np.ndarray:
     sub_images = list()
     bbox = cv2.boxPoints(box=rectangle.to_cv2_rect())
     round_side_correctly = lambda x, ids: np.floor(x / 2) if index in ids else np.ceil(x / 2)
     for index, corner in enumerate(bbox):
         sub_rectangle_center = np.mean([corner, [rectangle.center_x, rectangle.center_y]], axis=0)
-
-        sub_rectangle = Rectangle(center_x=sub_rectangle_center[0],
-                                  center_y=sub_rectangle_center[1],
-                                  width=round_side_correctly(int(rectangle.width), ids=[0, 1]),
-                                  height=round_side_correctly(int(rectangle.height), ids=[1, 2]),
-                                  angle=rectangle.angle)
+        sub_rectangle = CV2Rectangle(center_x=sub_rectangle_center[0],
+                                     center_y=sub_rectangle_center[1],
+                                     width=round_side_correctly(int(rectangle.width), ids=[0, 1]),
+                                     height=round_side_correctly(int(rectangle.height), ids=[1, 2]),
+                                     angle=rectangle.angle)
 
         sub_box = np.int0(cv2.boxPoints(box=sub_rectangle.to_cv2_rect()))
         corners_x, corners_y = sub_box[:, 0], sub_box[:, 1]

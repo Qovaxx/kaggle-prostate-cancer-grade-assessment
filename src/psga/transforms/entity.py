@@ -53,8 +53,9 @@ class Slice2D(BaseEntity):
         slice_vector = cv2.resize(slice_vector, dsize=(1, new_size), interpolation=cv2.INTER_NEAREST)
         return slice_vector.astype(np.bool).ravel().tolist()
 
+
 @dataclass
-class Rectangle(BaseEntity):
+class CV2Rectangle(BaseEntity):
     center_x: float
     center_y: float
     width: float
@@ -80,15 +81,52 @@ class Rectangle(BaseEntity):
 
 
 @dataclass
+class RectPackRectangle(BaseEntity):
+    bin: int
+    x: int
+    y: int
+    width: int
+    height: int
+    index: int
+
+    def rescale(self, scale: int) -> NoReturn:
+        self.x *= scale
+        self.y *= scale
+        self.width *= scale
+        self.height *= scale
+
+
+@dataclass
 class TissueObjects(BaseEntity):
     mask: np.ndarray
-    rectangles: List[Rectangle]
+    cv2_rectangles: List[CV2Rectangle]
+    bin_shape: Tuple[int, int]
+    rectpack_rectangles: List[RectPackRectangle]
 
     def rescale(self, scale: int, **kwargs) -> NoReturn:
-        shape = tuple(np.asarray(self.mask.shape) * scale)
-        self.mask = cv2.resize(self.mask, dsize=shape[::-1], interpolation=cv2.INTER_NEAREST)
-        for rectangle in self.rectangles:
-            rectangle.rescale(scale)
+        mask_shape = tuple(np.asarray(self.mask.shape) * scale)
+        self.mask = cv2.resize(self.mask, dsize=mask_shape[::-1], interpolation=cv2.INTER_NEAREST)
+        bin_shape = [0, 0]
+        for index, cv2_rect in enumerate(self.cv2_rectangles):
+            cv2_rect.rescale(scale)
+            rectpack_rect = list(filter(lambda x: x.index == index, self.rectpack_rectangles))[0]
+            rectpack_rect.rescale(scale)
+            # Rectpack rectangles can be rotated
+            if abs(cv2_rect.width - rectpack_rect.width) < abs(cv2_rect.width - rectpack_rect.height):
+                rectpack_rect.width = int(cv2_rect.width)
+                rectpack_rect.height = int(cv2_rect.height)
+            else:
+                rectpack_rect.width = int(cv2_rect.height)
+                rectpack_rect.height = int(cv2_rect.width)
+
+            max_width = rectpack_rect.x + rectpack_rect.width
+            max_height = rectpack_rect.y + rectpack_rect.height
+            if max_height >= bin_shape[0]:
+                bin_shape[0] = max_height
+            if max_width >= bin_shape[1]:
+                bin_shape[1] = max_width
+        exprected_bin_shape = tuple(np.asarray(self.bin_shape) * scale)
+        self.bin_shape = (max(bin_shape[0], exprected_bin_shape[0]), max(bin_shape[1], exprected_bin_shape[1]))
 
 
 @dataclass

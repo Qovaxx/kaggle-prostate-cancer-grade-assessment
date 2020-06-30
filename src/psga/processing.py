@@ -12,18 +12,25 @@ from .transforms.background import (
 )
 from .utils.memory import reduce_numpy_memory
 
+import matplotlib.pyplot as plt
+def show(image):
+    plt.figure()
+    plt.imshow(image)
+    plt.show()
+
 
 def dual_compose_preprocessing(large_image: np.ndarray, small_image: np.ndarray,
                                reduce_memory: bool = True,
                                )-> Tuple[np.ndarray, Intermediates]:
     scale = int(np.sqrt(large_image.size / small_image.size))
     small_image, intermediates = compose_preprocessing(small_image)
+    show(small_image)
     del small_image
     gc.collect()
 
     intermediates.rescale(scale)
     large_image, intermediates = compose_preprocessing(large_image, intermediates, reduce_memory=reduce_memory)
-
+    show(large_image)
     return large_image, intermediates
 
 
@@ -44,6 +51,5 @@ def compose_preprocessing(image: np.ndarray, intermediates: Intermediates = Inte
     image, mask = remove_gray_and_penmarks(image, mask=intermediates.clear_mask)
     image, precise_tissue_objects = convert_to_atlas(image, tissue_objects=intermediates.precise_tissue_objects,
                                                      not_background_mask=mask)
-
     intermediates = Intermediates(bbox, slice, rough_tissue_objects, mask, precise_tissue_objects)
     return image, intermediates

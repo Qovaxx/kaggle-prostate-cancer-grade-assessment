@@ -10,23 +10,18 @@ import numpy as np
 
 from .misc import apply_mask
 from .rectangle import fast_crop_rectangle
-from ..entity import TissueObjects
+from ..entity import (
+    TissueObjects,
+    CV2Rectangle,
+    RectPackRectangle
+)
 
 __all__ = ["create_bin", "pack_atlas"]
 
-RECTPACK_RECT_TYPE = Tuple[int, int, int, int, int, int]
 
-
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
-
-
-def create_bin(tissue_objects: TissueObjects, step_size: int = 10
-               ) -> Tuple[Tuple[int, int], List[RECTPACK_RECT_TYPE]]:
-    sides = [(int(rect.width), int(rect.height)) for rect in tissue_objects.rectangles]
+def create_bin(cv2_rectangles: List[CV2Rectangle], step_size: int = 10
+               ) -> Tuple[Tuple[int, int], List[RectPackRectangle]]:
+    sides = [(int(rect.width), int(rect.height)) for rect in cv2_rectangles]
     sides = list(chain(*sides))
     height = max(sides)
     width = min(sides)
@@ -37,16 +32,18 @@ def create_bin(tissue_objects: TissueObjects, step_size: int = 10
                                     sort_algo=rectpack.SORT_LSIDE,
                                     rotation=True)
         packer.add_bin(width=width, height=height)
-        for index, rect in enumerate(tissue_objects.rectangles):
+        for index, rect in enumerate(cv2_rectangles):
             packer.add_rect(width=int(rect.width), height=int(rect.height), rid=index)
 
         packer.pack()
-        if len(tissue_objects.rectangles) == len(packer[0].rectangles):
+        if len(cv2_rectangles) == len(packer[0].rectangles):
             break
         else:
             width += step_size
 
-    return (height, width), packer.rect_list()
+    rectpack_rectangles = [RectPackRectangle(*rect) for rect in packer.rect_list()]
+
+    return (height, width), rectpack_rectangles
 
 
 def pack_atlas(image: np.ndarray, tissue_objects: TissueObjects) -> np.ndarray:
@@ -55,21 +52,20 @@ def pack_atlas(image: np.ndarray, tissue_objects: TissueObjects) -> np.ndarray:
         tissue_objects.mask = cv2.resize(tissue_objects.mask, dsize=image.shape[:2][::-1], interpolation=cv2.INTER_NEAREST)
 
     crops = list()
-    for index, rectangle in enumerate(tissue_objects.rectangles):
+    for index, rect in enumerate(tissue_objects.cv2_rectangles):
         mask = (tissue_objects.mask == index + 1).astype(np.uint8)
         contoured_image = apply_mask(image, mask=mask, add=fill_value)
-        crops.append(fast_crop_rectangle(contoured_image, rectangle))
+        crops.append(fast_crop_rectangle(contoured_image, rect))
 
-    shape, rectangles = create_bin(tissue_objects)
+    shape = tissue_objects.bin_shape
     if len(image.shape) == 3:
         shape = [*shape, 3]
 
     atlas = np.full(shape=shape, fill_value=fill_value, dtype=np.uint8)
-    for rectangle in rectangles:
-        _, x, y, w, h, index = rectangle
-        crop = crops[index]
-        if crop.shape[:2] != (h, w):
+    for rect in tissue_objects.rectpack_rectangles:
+        crop = crops[rect.index]
+        if crop.shape[:2] != (rect.height, rect.width):
             crop = np.rot90(crop)
-        atlas[y: y + h, x: x + w] = crop
+        atlas[rect.y: rect.y + rect.height, rect.x: rect.x + rect.width] = crop
 
     return atlas

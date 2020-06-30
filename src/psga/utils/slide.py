@@ -12,7 +12,7 @@ def get_layer_safely(slide: MultiImage, layer: int, is_mask: bool = False,
     if is_mask:
         for current_layer in range(layer, 3):
             try:
-                mask = slide[layer][..., 0]
+                mask = slide[current_layer][..., 0]
                 if current_layer != layer:
                     scale = across_layer_scale ** (current_layer - layer)
                     mask = cv2.resize(mask, dsize=(0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
