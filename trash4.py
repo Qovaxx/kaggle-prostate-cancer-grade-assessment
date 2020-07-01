@@ -34,20 +34,24 @@ def show(image):
 #5c023def11d24939459afd3e3cb69620#
 
 
-from src.psga.processing import dual_compose_preprocessing
+from src.psga.image_processing import ImagePreProcessor
 
 # 1f368e9829e850bd6b6de7a521376720  косяк на краю
 
 
 # mimic_kaggle_kernel_specs(cpu=False)
 
-name = "87cce4cbe31864141051ce2018ed29df"
+name = "87ead124230cbf0aa13bcfb238b7dcb6"
 image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
+mask_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_label_masks/{name}_mask.tiff")
 
 large_image = get_layer_safely(image_slide, layer=0)
+# large_mask = get_layer_safely(mask_slide, layer=0, is_mask=True)
 small_image = get_layer_safely(image_slide, layer=2)
-show(small_image)
-large_image, intermediates = dual_compose_preprocessing(large_image, small_image)
+# small_mask = get_layer_safely(mask_slide, layer=2, is_mask=True)
+
+pre_processor = ImagePreProcessor(reduce_memory=False)
+large_image = pre_processor.dual(large_image, small_image)
 
 
 a = 4
