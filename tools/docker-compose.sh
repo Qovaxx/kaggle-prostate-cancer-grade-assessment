@@ -12,8 +12,8 @@
 #   ./docker-compose.sh up server_name service_name --no-color --build
 #   ./docker-compose.sh down server_name -v --rmi
 
-#export DOCKER_BUILDKIT=1
-#export COMPOSE_DOCKER_CLI_BUILD=1
+export DOCKER_BUILDKIT=1
+export COMPOSE_DOCKER_CLI_BUILD=1
 
 COMMAND=$1
 SERVER=$2

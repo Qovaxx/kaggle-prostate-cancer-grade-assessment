@@ -1,0 +1,10 @@
+version: '2.4'
+
+services:
+  prostate_cancer_grade_assessment:
+    volumes:
+      - ${DGX_RAW_DIRPATH}:${CONTAINER_RAW_DIRPATH}
+      - ${DGX_PROCESSED_DIRPATH}:${CONTAINER_PROCESSED_DIRPATH}
+      - ${DGX_ARTIFACTS_DIRPATH}:${CONTAINER_ARTIFACTS_DIRPATH}
+    environment:
+      - CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,7
