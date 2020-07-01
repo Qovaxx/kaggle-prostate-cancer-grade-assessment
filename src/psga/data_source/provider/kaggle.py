@@ -30,10 +30,7 @@ from ..utils import (
     plot_meta,
     RGB_TYPE
 )
-from ...image_processing import (
-    compose_preprocessing,
-    dual_compose_preprocessing
-)
+from ...image_processing import ImagePreProcessor
 from ...phase import Phase
 from ...utils.slide import get_layer_safely
 
@@ -109,9 +106,10 @@ class PSGADataAdapter(BaseDataAdapter):
             small_image = cv2.resize(large_image, dsize=(0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
 
         try:
-            large_image, intermediates = dual_compose_preprocessing(large_image, small_image, reduce_memory=False)
-            if large_mask is not None:
-                large_mask, _ = compose_preprocessing(large_mask, intermediates=intermediates, reduce_memory=False)
+            pre_processor = ImagePreProcessor(reduce_memory=False)
+            large_image = pre_processor.dual(large_image, small_image)
+            if large_image is not None:
+                large_mask = pre_processor.single(large_mask)
 
             row = train_meta[train_meta.image_id == name].iloc[0]
             data_provider = row["data_provider"]

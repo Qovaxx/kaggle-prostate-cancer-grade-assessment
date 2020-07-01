@@ -326,3 +326,4 @@ fabric.properties
 !/.env
 /.idea/codeStyles/codeStyleConfig.xml
 /.idea/remote-mappings.xml
+/.idea/webServers.xml

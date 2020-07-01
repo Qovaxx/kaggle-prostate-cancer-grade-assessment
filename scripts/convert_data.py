@@ -8,4 +8,4 @@ from src.psga.settings import (
 
 writer = TIFFWriter(str(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME), quality=90, tile_size=512)
 adapter = PSGADataAdapter(str(RAW_DIRPATH / KAGGLE_DATASET_NAME), writer, verbose=True)
-adapter.convert(processes=5)
+adapter.convert(processes=15)
