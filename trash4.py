@@ -46,12 +46,16 @@ image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_imag
 mask_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_label_masks/{name}_mask.tiff")
 
 large_image = get_layer_safely(image_slide, layer=0)
-# large_mask = get_layer_safely(mask_slide, layer=0, is_mask=True)
+large_mask = get_layer_safely(mask_slide, layer=0, is_mask=True)
 small_image = get_layer_safely(image_slide, layer=2)
-# small_mask = get_layer_safely(mask_slide, layer=2, is_mask=True)
+small_mask = get_layer_safely(mask_slide, layer=2, is_mask=True)
+show(small_image)
+show(small_mask)
 
 pre_processor = ImagePreProcessor(reduce_memory=False)
 large_image = pre_processor.dual(large_image, small_image)
+show(large_image)
+show(large_mask)
 
 
 a = 4

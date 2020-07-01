@@ -20,13 +20,13 @@ SERVER=$2
 PARAMS="${@:3}"
 case ${COMMAND} in
     build)
-        /home/local/X5/mikhail.chernyshev/docker-compose -f docker-compose.yml build ${PARAMS}
+        docker-compose -f docker-compose.yml build ${PARAMS}
         ;;
     up)
-        /home/local/X5/mikhail.chernyshev/docker-compose -f docker-compose.yml -f docker-compose.${SERVER,,}.yml up -d ${PARAMS}
+        docker-compose -f docker-compose.yml -f docker-compose.${SERVER,,}.yml up -d ${PARAMS}
         ;;
     down)
-        /home/local/X5/mikhail.chernyshev/docker-compose -f docker-compose.yml -f docker-compose.${SERVER,,}.yml down ${PARAMS}
+        docker-compose -f docker-compose.yml -f docker-compose.${SERVER,,}.yml down ${PARAMS}
         ;;
     *)
         echo $"Usage: $0 {build|up|down}"
