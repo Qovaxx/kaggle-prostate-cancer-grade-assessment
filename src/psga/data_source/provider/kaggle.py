@@ -108,7 +108,7 @@ class PSGADataAdapter(BaseDataAdapter):
         try:
             pre_processor = ImagePreProcessor(reduce_memory=False)
             large_image = pre_processor.dual(large_image, small_image)
-            if large_image is not None:
+            if large_mask is not None:
                 large_mask = pre_processor.single(large_mask)
 
             row = train_meta[train_meta.image_id == name].iloc[0]
