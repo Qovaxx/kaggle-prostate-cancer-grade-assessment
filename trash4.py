@@ -41,7 +41,7 @@ from src.psga.image_processing import ImagePreProcessor
 
 # mimic_kaggle_kernel_specs(cpu=False)
 
-name = "87ead124230cbf0aa13bcfb238b7dcb6"
+name = "040b2c98538ec7ead1cbd6daacdb3f64"
 image_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_images/{name}.tiff")
 mask_slide = MultiImage(f"/data/raw/prostate-cancer-grade-assessment/train_label_masks/{name}_mask.tiff")
 
@@ -50,12 +50,16 @@ large_mask = get_layer_safely(mask_slide, layer=0, is_mask=True)
 small_image = get_layer_safely(image_slide, layer=2)
 small_mask = get_layer_safely(mask_slide, layer=2, is_mask=True)
 show(small_image)
-show(small_mask)
+if small_mask is not None:
+    show(small_mask)
 
 pre_processor = ImagePreProcessor(reduce_memory=False)
 large_image = pre_processor.dual(large_image, small_image)
 show(large_image)
-show(large_mask)
+if large_mask is not None:
+    large_mask = pre_processor.single(large_mask)
+    show(large_mask)
+
 
 
 a = 4

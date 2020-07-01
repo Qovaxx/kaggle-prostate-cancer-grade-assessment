@@ -11,8 +11,7 @@ def show(image):
 
 from src.psga.spacer import SpaceConverter
 
-image = OpenSlide(path)
-image_spacer = SpaceConverter(cm_resolution=image.properties['tiff.XResolution'])
+image_spacer = SpaceConverter(cm_resolution=20000)
 microns_shape = image_spacer.pixels_to_microns(pixels_size=(512, 231))
 pixels_shape = image_spacer.microns_to_pixels(microns_size=(300, 133))
 
