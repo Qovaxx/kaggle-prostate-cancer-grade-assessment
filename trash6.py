@@ -9,12 +9,15 @@ def show(image):
     plt.show()
 
 
+from src.psga.spacer import SpaceConverter
 
-image = MultiImage("/data/raw/prostate-cancer-grade-assessment/train_label_masks/418e6b6e39af708710e1e497ca629ee8_mask.tiff")
-z1 = image[0]
-z2 = image[1]
-z3 = image[2]
+image = OpenSlide(path)
+image_spacer = SpaceConverter(cm_resolution=image.properties['tiff.XResolution'])
+microns_shape = image_spacer.pixels_to_microns(pixels_size=(512, 231))
+pixels_shape = image_spacer.microns_to_pixels(microns_size=(300, 133))
 
-show(z3)
+
+
+
 
 a = 4
