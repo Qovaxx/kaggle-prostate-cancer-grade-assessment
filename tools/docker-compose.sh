@@ -12,21 +12,21 @@
 #   ./docker-compose.sh up server_name service_name --no-color --build
 #   ./docker-compose.sh down server_name -v --rmi
 
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
+#export DOCKER_BUILDKIT=1
+#export COMPOSE_DOCKER_CLI_BUILD=1
 
 COMMAND=$1
 SERVER=$2
 PARAMS="${@:3}"
 case ${COMMAND} in
     build)
-        docker-compose -f docker-compose.yml build ${PARAMS}
+        /home/local/X5/mikhail.chernyshev/docker-compose -f docker-compose.yml build ${PARAMS}
         ;;
     up)
-        docker-compose -f docker-compose.yml -f docker-compose.${SERVER,,}.yml up -d ${PARAMS}
+        /home/local/X5/mikhail.chernyshev/docker-compose -f docker-compose.yml -f docker-compose.${SERVER,,}.yml up -d ${PARAMS}
         ;;
     down)
-        docker-compose -f docker-compose.yml -f docker-compose.${SERVER,,}.yml down ${PARAMS}
+        /home/local/X5/mikhail.chernyshev/docker-compose -f docker-compose.yml -f docker-compose.${SERVER,,}.yml down ${PARAMS}
         ;;
     *)
         echo $"Usage: $0 {build|up|down}"

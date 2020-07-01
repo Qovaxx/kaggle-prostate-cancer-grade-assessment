@@ -30,7 +30,7 @@ from ..utils import (
     plot_meta,
     RGB_TYPE
 )
-from ...processing import (
+from ...image_processing import (
     compose_preprocessing,
     dual_compose_preprocessing
 )
