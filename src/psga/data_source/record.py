@@ -10,14 +10,14 @@ from typing import (
 
 import numpy as np
 
-from .phase import Phase
+from src.psga.phase import Phase
 
 
 @dataclass
 class Record(object):
     image: np.ndarray
     mask: Optional[np.ndarray] = field(default=None)
-    eda: Optional[np.ndarray] = field(default=None)
+    visualization: Optional[np.ndarray] = field(default=None)
     name: Optional[str] = field(default=None)  # name. id. etc - must be unique
     label: Optional[int] = field(default=None)
     fold: Optional[int] = field(default=None)
