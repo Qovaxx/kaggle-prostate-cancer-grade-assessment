@@ -68,7 +68,10 @@ def cohen_kappa_score(input: Tensor, target: Tensor,
                       weights: Optional[str] = None,
                       labels: Optional[Tensor] = None,
                       sample_weight: Optional[Tensor] = None) -> Tensor:
-
+    """
+    :param input: 1-dim vector
+    :param target:  1-dim vector
+    """
     cm_matrix = confusion_matrix(input, target, labels=labels, sample_weight=sample_weight)
     n_classes = cm_matrix.shape[0]
     sum0 = torch.sum(cm_matrix, dim=0)
