@@ -82,8 +82,7 @@ class PSGADataAdapter(BaseDataAdapter):
             run = lambda x: list(tqdm(x, total=len(pairs), desc="Converted: ")) if self._verbose else lambda x: x
             run(p.imap(partial(self._worker, namespace=self._mp_namespace), pairs))
 
-        print("flush")
-        # self._writer.flush(count_samples_from="images/*/*")
+        self._writer.flush(count_samples_from="images/*/*")
 
     @staticmethod
     def _worker(paths: Tuple[Path, Optional[Path]], namespace) -> NoReturn:
