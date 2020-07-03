@@ -3,7 +3,7 @@ from src.psga.data_source.reader import TIFFReader
 from time import time
 from tqdm import tqdm
 import cv2
-from src.psga.utils.pickle import save_pickle
+from src.psga.utils.pickle import save_pickle, load_pickle
 import numpy as np
 from src.psga.grade import CancerGradeSystem
 
@@ -13,28 +13,6 @@ def show(image):
     plt.figure()
     plt.imshow(image)
     plt.show()
-
-
-reader = TIFFReader(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME)
-grader = CancerGradeSystem()
-
-un = set([x["additional"]["gleason_score"] for x in reader.meta])
-
-for i in range(reader.num_images):
-    rec = reader.meta[i]
-    isup = rec["label"]
-    gleason = rec["additional"]["gleason_score"]
-    if gleason == "negative":
-        gl1 = 0; gl2 = 0
-    else:
-        gl1 = int(gleason.split("+")[0]); gl2 = int(gleason.split("+")[1])
-
-    if isup != grader.gleason_to_isup(gl1, gl2):
-        print(f"{rec['name']}: {isup} - {gleason}")
-
-
-
-
 
 
 # with open("/project/data/duplicates", "r") as f:
