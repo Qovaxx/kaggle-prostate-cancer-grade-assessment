@@ -1,22 +1,26 @@
-from src.psga.utils.pickle import load_pickle
-from pathlib import Path
-from skimage.io import MultiImage
-
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
+import torch
+import torch.nn.functional as F
+from sklearn.metrics import cohen_kappa_score, confusion_matrix
+import  src.psga.train.evaluation.functional as F
 
 
-from src.psga.spacer import SpaceConverter
+input = [1,2,4,1,2,3,4,5,0,1]
+target = [2,2,2,1,2,3,4,5,0,1]
+labels = [1, 2, 3]
+sample_weights = [2,1,1,2,1,1,3,1,1,1]
+sklearn_cm = confusion_matrix(target, input, labels=None, sample_weight=sample_weights)
 
-image_spacer = SpaceConverter(cm_resolution=20000)
-microns_shape = image_spacer.pixels_to_microns(pixels_size=(512, 231))
-pixels_shape = image_spacer.microns_to_pixels(microns_size=(300, 133))
 
+input = torch.tensor(input)
+target = torch.tensor(target)
+
+torch_cm = F.confusion_matrix(input, target, labels=None, sample_weight=torch.tensor(sample_weights)).numpy()
 
 
 
 
 a = 4
+
+
+
+
