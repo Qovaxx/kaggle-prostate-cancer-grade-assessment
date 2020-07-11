@@ -20,19 +20,19 @@ from openslide import OpenSlide
 from skimage.io import MultiImage
 from typing_extensions import Final
 
-from ..base import (
+from src.psga.data_source.base import (
     BaseDataAdapter,
     BaseWriter
 )
-from ..record import Record
-from ..utils import (
+from src.psga.data_source.record import Record
+from src.psga.data_source.utils import (
     draw_overlay_mask,
     plot_meta,
     RGB_TYPE
 )
-from ...image_processing import ImagePreProcessor
-from ...phase import Phase
-from ...utils.slide import get_layer_safely
+from src.psga.image_processing import ImagePreProcessor
+from src.psga.phase import Phase
+from src.psga.utils.slide import get_layer_safely
 
 
 SEGMENTATION_MAP: Final = {

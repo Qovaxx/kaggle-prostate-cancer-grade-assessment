@@ -14,7 +14,7 @@ from typing import (
 from pathlib import Path
 
 from .record import Record
-from src.psga.utils.pickle import (
+from src.psga.utils.inout import (
     save_pickle,
     load_pickle
 )
@@ -132,4 +132,10 @@ class BaseDataAdapter(ABC):
 
     @abstractmethod
     def convert(self) -> NoReturn:
+        ...
+
+
+class BasePhaseSplitter(ABC):
+
+    def split(self, reader: BaseReader) -> NoReturn:
         ...
