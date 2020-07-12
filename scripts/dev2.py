@@ -8,7 +8,7 @@ import numpy as np
 from src.psga.grade import CancerGradeSystem
 import zlib
 import pickle
-from src.psga.data_source.provider.kaggle import PSGAClassificationDataset
+from src.psga.data_source.provider.kaggle import PSGAPatchSequenceClassificationDataset
 
 
 
@@ -18,7 +18,7 @@ def show(image):
     plt.imshow(image)
     plt.show()
 
-dataset = PSGAClassificationDataset(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME)
+dataset = PSGAPatchSequenceClassificationDataset(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME)
 z = dataset[312]
 
 

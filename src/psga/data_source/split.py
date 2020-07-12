@@ -15,6 +15,7 @@ from .base import (
     BaseReader,
     BasePhaseSplitter
 )
+from ..phase import Phase
 from ..settings import (
     MASK_LABEL_MISMATCH_PATH,
     DUPLICATES_PATH
@@ -86,10 +87,10 @@ class StratifiedGroupKFold(_BaseKFold):
         return super().split(x, y, groups)
 
 
-
 class CleanedPhaseSplitter(BasePhaseSplitter):
 
     def __init__(self, n_splits: int = 5) -> NoReturn:
+        self._n_splits = n_splits
         self._k_fold = StratifiedGroupKFold(n_splits + 1, shuffle=True, random_state=777)
         self._exclude_names = load_file(str(MASK_LABEL_MISMATCH_PATH))
         self._pseudo_duplicates = {x.split(",")[0]: int(x.split(",")[1]) for x in load_file(str(DUPLICATES_PATH))[1:]}
@@ -107,6 +108,10 @@ class CleanedPhaseSplitter(BasePhaseSplitter):
                 groups_count += 1
                 groups.append(groups_count)
 
-        for train_indices, val_indices in self._k_fold.split(x=names, y=labels, groups=groups):
-
-            print("TRAIN:", train_indices, "TEST:", val_indices)
+        for fold, (_, val_indices) in enumerate(self._k_fold.split(x=names, y=labels, groups=groups)):
+            for index in val_indices:
+                if fold == self._n_splits:
+                    reader.meta[index]["phase"] = Phase.TEST
+                else:
+                    reader.meta[index]["phase"] = Phase.VAL
+                    reader.meta[index]["fold"] = fold
