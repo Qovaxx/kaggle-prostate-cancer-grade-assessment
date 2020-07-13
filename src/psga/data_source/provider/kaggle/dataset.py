@@ -59,11 +59,11 @@ class PSGAPatchSequenceClassificationDataset(Dataset):
         return len(self._index_map)
 
     def __getitem__(self, item: int): # -> Dict[str, Union[Tensor, int]]:
-        record = self._reader.get(self._index_map[item], read_mask=False, read_visualization=False)
+        record = self._reader.get(self._index_map[item], read_mask=True, read_visualization=False)
         spacer = SpaceConverter(cm_resolution=record.additional["x_resolution"])
         pixel_tile_size = spacer.microns_to_pixels(self._micron_tile_size)
 
-        tiles = F.cut_tiles(record.image, tile_size=pixel_tile_size)
+        tiles = F.cut_tiles(record.mask, tile_size=pixel_tile_size, calculate_coordinates=True)
 
 
 
