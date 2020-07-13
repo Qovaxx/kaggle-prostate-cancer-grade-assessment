@@ -13,8 +13,8 @@ def show(image):
     plt.show()
 
 
-def cut_tiles(image: np.ndarray, tile_size: int, border_value: int = 255,
-              remove_empty_tiles: bool = True, calculate_coordinates: bool = False
+def cut_tiles(image: np.ndarray, tile_size: int, border_value: int = 255, filter_empty_threshold: float = 0.0,
+              remove_empty_tiles: bool = False, calculate_coordinates: bool = False
               ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
     if len(image.shape) == 2:
         image = np.expand_dims(image, axis=-1)
@@ -31,8 +31,8 @@ def cut_tiles(image: np.ndarray, tile_size: int, border_value: int = 255,
     tiles = tiles.transpose(0, 2, 1, 3, 4).reshape(-1, tile_size, tile_size, channels)
 
     if remove_empty_tiles:
-        empty_sum = tile_size * tile_size * channels * border_value
-        selected_indices = np.where(tiles.sum(axis=(1, 2, 3)) != empty_sum)[0]
+        empty_sum = tile_size * tile_size * channels * border_value * (1 - filter_empty_threshold)
+        selected_indices = np.where(tiles.sum(axis=(1, 2, 3)) < empty_sum)[0]
         tiles = tiles[selected_indices]
 
     coordinates = None
