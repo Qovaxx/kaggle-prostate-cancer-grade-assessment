@@ -14,12 +14,12 @@ from albumentations.pytorch import ToTensorV2
 import numpy as np
 from torch.utils.data import Dataset
 
-from . import functional as F
 from ...read import TIFFReader
 from ...base import BasePhaseSplitter
 from ...split import CleanedPhaseSplitter
 from ....spacer import SpaceConverter
 from ....phase import Phase
+from ....transforms.slicer import TilesSlicer
 from ....utils.inout import (
     load_pickle,
     save_pickle
@@ -90,7 +90,7 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
 
         phase_indices = [i for i in self._phase_indices
                          if self._reader.meta[i]["additional"]["data_provider"] == "radboud"]
-
+        # Remove empty masks
 
 
 
@@ -102,9 +102,9 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
 
 class PSGATileSequenceClassificationDataset(_BasePSGATileDataset):
 
-    def __init__(self, crop_filter_threshold: float = 0.1, *args, **kwargs) -> NoReturn:
+    def __init__(self, _crop_emptiness_degree: float = 0.9, *args, **kwargs) -> NoReturn:
         super().__init__(*args, **kwargs)
-        self._crop_filter_threshold = crop_filter_threshold
+        self._crop_emptiness_degree = _crop_emptiness_degree
         self._index_map = dict(enumerate(self._phase_indices))
 
     def __len__(self) -> int:
@@ -120,32 +120,18 @@ class PSGATileSequenceClassificationDataset(_BasePSGATileDataset):
         if self._image_transforms:
             image = self._image_transforms(image=image)["image"]
 
-        tiles, coords = F.cut_tiles(image, tile_size=pixel_tile_size,
-                                    remove_empty_tiles=True, return_normed_coords=True,
-                                    filter_empty_threshold=self._crop_filter_threshold)
+        slicer = TilesSlicer(pixel_tile_size, remove_empty_tiles=True, emptiness_degree=self._crop_emptiness_degree)
+        tiles, _ = slicer(image)
 
         if pixel_tile_size != self._pixel_tile_size:
-            resize_it = lambda iterable, inter: np.asarray(
-                [cv2.resize(x, dsize=(self._pixel_tile_size, self._pixel_tile_size), interpolation=inter) for x in iterable]
-            )
-            tiles = resize_it(tiles, inter=cv2.INTER_LANCZOS4)
-            coords = resize_it(coords, inter=cv2.INTER_NEAREST)
+            tiles = np.asarray([
+                cv2.resize(tile, dsize=(self._pixel_tile_size, self._pixel_tile_size), interpolation=cv2.INTER_LANCZOS4)
+                for tile in tiles
+            ])
 
         if self._crop_transforms:
-            transformed_crops = list()
-            transformed_coords = list()
+            tiles = [self._crop_transforms(image=tile)["image"] for tile in tiles]
+            lib = np if isinstance(tiles[0], np.ndarray) else torch
+            tiles = lib.stack(tiles)
 
-            for tile, coord in zip(tiles, coords):
-                transformed = self._crop_transforms(image=tile, mask=coord)
-                transformed_crops.append(transformed["image"])
-
-                coord = transformed["mask"]
-                if ToTensorV2 in map(type, self._crop_transforms.transforms.transforms):
-                    coord = coord.permute(2, 0, 1).float()
-                transformed_coords.append(coord)
-
-            lib = np if isinstance(transformed_crops[0], np.ndarray) else torch
-            tiles = lib.stack(transformed_crops)
-            coords = lib.stack(transformed_coords)
-
-        return {"tiles": tiles, "coords": coords, "target": record.label, "data_provider": data_provider}
+        return {"tiles": tiles, "isup_grade": record.label, "data_provider": data_provider}
