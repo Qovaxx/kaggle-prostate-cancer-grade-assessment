@@ -17,38 +17,12 @@ import cv2
 import numpy as np
 from src.psga.transforms.slicer import TilesSlicer
 
-# image = cv2.imread("/data/processed/gradient-1000-colours.jpg")
-# slicer = TilesSlicer(256, intersection=0.5, emptiness_degree=0.5, remove_empty_tiles=True)
-# tiles = slicer(image)
-
-
-
-
-# tile_size = 256
-# intersection = 0.3
-# step = int(tile_size * intersection)
-#
-#
-# x_steps = np.arange(0, image.shape[1], step)
-# y_steps = np.arange(0, image.shape[0], step)
-#
-# pad_w = x_steps[-1] + tile_size - image.shape[1]
-# pad_h = y_steps[-1] + tile_size - image.shape[0]
-#
-# pad_width = [[pad_h // 2, pad_h - pad_h // 2], [pad_w // 2, pad_w - pad_w // 2], [0, 0]]
-# image = np.pad(image, pad_width=pad_width, mode="constant", constant_values=255)
-#
-# tiles = list()
-# for y in y_steps:
-#     for x in x_steps:
-#         tiles.append(image[y: y+tile_size, x: x+ tile_size])
-# tiles = np.asarray(tiles)
 
 
 
 
 
-a = 4
+
 
 
 
@@ -56,17 +30,17 @@ image_transforms = Compose([HorizontalFlip(always_apply=True)])
 crop_transforms = Compose([VerticalFlip(always_apply=True), Blur(blur_limit=30, always_apply=True), Normalize(always_apply=True), ToTensorV2()])
 
 
-# dataset = PSGATileMaskedClassificationDataset(path=str(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME),
-#                                               image_transforms=image_transforms,
-#                                               crop_transforms=crop_transforms)
+dataset = PSGATileMaskedClassificationDataset(path=str(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME),
+                                              image_transforms=image_transforms,
+                                              crop_transforms=crop_transforms)
+dataset[1000]
 
 
-
-dataset = PSGATileSequenceClassificationDataset(path=str(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME),
-                                                image_transforms=image_transforms,
-                                                crop_transforms=crop_transforms)
-z = dataset[123]
-# data_loader = DataLoader(dataset, batch_size=3, shuffle=True, collate_fn=dataset.fast_collate_fn)
+# dataset = PSGATileSequenceClassificationDataset(path=str(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME),
+#                                                 image_transforms=image_transforms,
+#                                                 crop_transforms=crop_transforms)
+# z = dataset[123]
+# # data_loader = DataLoader(dataset, batch_size=3, shuffle=True, collate_fn=dataset.fast_collate_fn)
 
 
 
@@ -119,9 +93,5 @@ z = dataset[123]
 #             embeddings.extend(embedder(chunk)["embedding"].flatten(1).cpu())
 #
 #         batch_embeddings.append(torch.stack(embeddings))
-
-
-
-a = 4
 
 

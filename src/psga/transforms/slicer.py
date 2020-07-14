@@ -37,17 +37,6 @@ class TilesSlicer(object):
 
         return tiles, non_empty_tiles_indices
 
-
-    def _pad_image(self, image: np.ndarray, pad_width: int, pad_height: int):
-        half_height = pad_height // 2
-        half_width = pad_width // 2
-        pads = [[half_height, pad_height - half_height], [half_width, pad_width - half_width]]
-        if len(image.shape) == 3:
-            pads.append([0, 0])
-
-        image = np.pad(image, pad_width=pads, mode="constant", constant_values=self._fill_value)
-        return image
-
     def _fast_non_overlapped_slice(self, image: np.ndarray) -> np.ndarray:
         pad_height = self._tile_size - image.shape[0] % self._tile_size
         pad_width = self._tile_size - image.shape[1] % self._tile_size
@@ -80,3 +69,13 @@ class TilesSlicer(object):
                 tiles.append(image[y: y + self._tile_size, x: x + self._tile_size])
 
         return np.asarray(tiles)
+
+    def _pad_image(self, image: np.ndarray, pad_width: int, pad_height: int):
+        half_height = pad_height // 2
+        half_width = pad_width // 2
+        pads = [[half_height, pad_height - half_height], [half_width, pad_width - half_width]]
+        if len(image.shape) == 3:
+            pads.append([0, 0])
+
+        image = np.pad(image, pad_width=pads, mode="constant", constant_values=self._fill_value)
+        return image
