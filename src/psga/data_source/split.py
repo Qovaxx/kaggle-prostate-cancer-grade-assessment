@@ -1,5 +1,7 @@
 from collections import defaultdict
 from typing import (
+    Any,
+    Dict,
     Optional,
     NoReturn,
     List,
@@ -11,10 +13,7 @@ import numpy as np
 from sklearn.model_selection._split import _BaseKFold
 from sklearn.utils.validation import check_array, check_random_state
 
-from .base import (
-    BaseReader,
-    BasePhaseSplitter
-)
+from .base import BasePhaseSplitter
 from ..phase import Phase
 from ..settings import (
     MASK_LABEL_MISMATCH_PATH,
@@ -95,9 +94,9 @@ class CleanedPhaseSplitter(BasePhaseSplitter):
         self._exclude_names = load_file(str(MASK_LABEL_MISMATCH_PATH))
         self._pseudo_duplicates = {x.split(",")[0]: int(x.split(",")[1]) for x in load_file(str(DUPLICATES_PATH))[1:]}
 
-    def split(self, reader: BaseReader) -> NoReturn:
-        names = list(map(lambda x: x["name"], reader.meta))
-        labels = list(map(lambda x: x["label"], reader.meta))
+    def split(self, meta: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        names = list(map(lambda x: x["name"], meta))
+        labels = list(map(lambda x: x["label"], meta))
 
         groups = list()
         groups_count = len(set(self._pseudo_duplicates.values()))
@@ -111,7 +110,9 @@ class CleanedPhaseSplitter(BasePhaseSplitter):
         for fold, (_, val_indices) in enumerate(self._k_fold.split(x=names, y=labels, groups=groups)):
             for index in val_indices:
                 if fold == self._n_splits:
-                    reader.meta[index]["phase"] = Phase.TEST
+                    meta[index]["phase"] = Phase.TEST
                 else:
-                    reader.meta[index]["phase"] = Phase.VAL
-                    reader.meta[index]["fold"] = fold
+                    meta[index]["phase"] = Phase.VAL
+                    meta[index]["fold"] = fold
+
+        return meta

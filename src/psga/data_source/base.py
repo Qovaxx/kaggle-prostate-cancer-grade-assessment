@@ -1,4 +1,5 @@
 import shutil
+from collections import Counter
 from abc import (
     abstractmethod,
     ABC
@@ -114,6 +115,14 @@ class BaseReader(BaseDataStructure):
             self.__meta = load_pickle(str(self.meta_path))
         return self.__meta
 
+    @meta.setter
+    def meta(self, value: List[Dict[str, Any]]) -> NoReturn:
+        take_it = lambda iterable, key: [x[key] for x in iterable]
+        assert set(take_it(self.meta, key="name")).difference(set(take_it(value, key="name"))) == set()
+        assert Counter(take_it(self.meta, key="label")) == Counter(take_it(value, key="label"))
+
+        self.__meta = value
+
     @abstractmethod
     def get(self, index: int) -> Record:
         ...
@@ -137,5 +146,5 @@ class BaseDataAdapter(ABC):
 
 class BasePhaseSplitter(ABC):
 
-    def split(self, reader: BaseReader) -> NoReturn:
+    def split(self, meta: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         ...

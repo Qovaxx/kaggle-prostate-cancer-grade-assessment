@@ -1,16 +1,5 @@
 from src.psga.settings import PROCESSED_DIRPATH, KAGGLE_DATASET_NAME
-from src.psga.data_source.read import TIFFReader
-from time import time
-from tqdm import tqdm
-import cv2
-from src.psga.utils.inout import save_pickle, load_pickle
-import numpy as np
-from src.psga.grade import CancerGradeSystem
-import zlib
-import pickle
 from src.psga.data_source.provider.kaggle import PSGAPatchSequenceClassificationDataset
-
-
 
 import matplotlib.pyplot as plt
 def show(image):
@@ -18,8 +7,16 @@ def show(image):
     plt.imshow(image)
     plt.show()
 
-dataset = PSGAPatchSequenceClassificationDataset(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME)
-z = dataset[312]
+
+from albumentations import Compose, HorizontalFlip, Blur, Normalize, VerticalFlip
+from albumentations.pytorch import ToTensorV2
+
+
+image_transforms = Compose([HorizontalFlip(always_apply=True)])
+crop_transforms = Compose([VerticalFlip(always_apply=True), Blur(blur_limit=30, always_apply=True), Normalize(always_apply=True), ToTensorV2()])
+
+dataset = PSGAPatchSequenceClassificationDataset(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME, image_transforms=image_transforms, crop_transforms=crop_transforms)
+z = dataset[4544]
 
 
 a = 4

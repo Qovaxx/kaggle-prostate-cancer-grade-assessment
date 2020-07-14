@@ -6,15 +6,8 @@ from typing import (
 import numpy as np
 
 
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
-
-
 def cut_tiles(image: np.ndarray, tile_size: int, border_value: int = 255, filter_empty_threshold: float = 0.0,
-              remove_empty_tiles: bool = False, calculate_coordinates: bool = False
+              remove_empty_tiles: bool = False, return_normed_coords: bool = False
               ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
     if len(image.shape) == 2:
         image = np.expand_dims(image, axis=-1)
@@ -35,15 +28,15 @@ def cut_tiles(image: np.ndarray, tile_size: int, border_value: int = 255, filter
         selected_indices = np.where(tiles.sum(axis=(1, 2, 3)) < empty_sum)[0]
         tiles = tiles[selected_indices]
 
-    coordinates = None
-    if calculate_coordinates:
-        coordinates = np.zeros((*tiles.shape[:3], 2))
-        for index in range(coordinates.shape[0]):
+    normed_coords = None
+    if return_normed_coords:
+        normed_coords = np.zeros((*tiles.shape[:3], 2), dtype=np.float32)
+        for index in range(normed_coords.shape[0]):
             x = (index % n_tiles_w) * tile_size
             y = (index // n_tiles_w) * tile_size
 
             x_coords = np.tile(A=np.expand_dims(np.arange(x, x + tile_size), axis=0), reps=(tile_size, 1)) / image.shape[1]
             y_coords = np.tile(A=np.expand_dims(np.arange(y, y + tile_size), axis=1), reps=(1, tile_size)) / image.shape[0]
-            coordinates[index] = np.dstack([y_coords, x_coords])
+            normed_coords[index] = np.dstack([y_coords, x_coords])
 
-    return tiles, coordinates
+    return tiles, normed_coords

@@ -7,9 +7,10 @@ RAW_DIRPATH = Path(os.environ.get("RAW_DIRPATH", "/data/raw"))
 PROCESSED_DIRPATH = Path(os.environ.get("PROCESSED_DIRPATH", "/data/processed"))
 ARTIFACTS_DIRPATH = Path(os.environ.get("ARTIFACTS_DIRPATH", "/artifacts"))
 
-DUPLICATES_PATH = PROJECT_DIRPATH / "data" / "duplicates"
-EMPTY_MASKS_PATH = PROJECT_DIRPATH / "data" / "empty_masks"
-MASK_LABEL_MISMATCH_PATH = PROJECT_DIRPATH / "data" / "mask_label_mismatch"
+DATA_DIRPATH = PROJECT_DIRPATH / "data"
+DUPLICATES_PATH = DATA_DIRPATH / "duplicates"
+EMPTY_MASKS_PATH = DATA_DIRPATH / "empty_masks"
+MASK_LABEL_MISMATCH_PATH = DATA_DIRPATH / "mask_label_mismatch"
 
 KAGGLE_DATASET_NAME = "prostate-cancer-grade-assessment"
 SUBMISSION_FILENAME = "submission.csv"
