@@ -1,6 +1,8 @@
 from typing import (
     Dict,
     Optional,
+    ClassVar,
+    List,
     NoReturn,
     Union
 )
@@ -35,24 +37,35 @@ def show(image):
     plt.show()
 
 
-class PSGAPatchSequenceClassificationDataset(Dataset):
 
-    def __init__(self, path: str, micron_tile_size: int = 231,
-                 fold: int = 0, phase: str = "train",
-                 crop_filter_threshold: float = 0.1,
+class _BasePSGATileDataset(Dataset):
+
+    available_phases: ClassVar[List[str]] = ["train", "val", "test"]
+
+    def __init__(self, path: str,
+                 phase: str = "train", fold: int = 0,
+                 micron_tile_size: int = 231,
                  image_transforms: Optional[A.Compose] = None,
                  crop_transforms: Optional[A.Compose] = None,
-                 phase_splitter: Optional[BasePhaseSplitter] = CleanedPhaseSplitter()):
+                 phase_splitter: Optional[BasePhaseSplitter] = CleanedPhaseSplitter(),
+                 split_filename: str = "phase_splitted_meta",
+                 *args, **kwargs) -> NoReturn:
+        super().__init__(*args, **kwargs)
 
         self._reader = TIFFReader(path)
+
+        assert phase in self.available_phases, f"Available phases are: {self.available_phases}"
+        self._phase = Phase[phase.upper()]
+        self._fold = fold
+
         self._micron_tile_size = micron_tile_size
         self._pixel_tile_size = SpaceConverter(cm_resolution=MAX_CM_RESOLUTION).microns_to_pixels(micron_tile_size)
-        self._crop_filter_threshold = crop_filter_threshold
+
         self._image_transforms = image_transforms
         self._crop_transforms = crop_transforms
 
         if phase_splitter:
-            file_path = DATA_DIRPATH / "phase_splitted_meta.pkl"
+            file_path = (DATA_DIRPATH / split_filename).with_suffix(".pkl")
             if file_path.exists():
                 meta = load_pickle(str(file_path))
                 self._reader.meta = meta
@@ -62,17 +75,37 @@ class PSGAPatchSequenceClassificationDataset(Dataset):
 
         meta = self._reader.meta
         rng = range(len(meta))
-        phase = Phase[phase.upper()]
-        if phase == Phase.TRAIN:
-            phase_indices = [i for i in rng if meta[i]["fold"] != fold and meta[i]["phase"] != Phase.TEST]
-        elif phase == Phase.VAL:
-            phase_indices = [i for i in rng if meta[i]["fold"] == fold and meta[i]["phase"] != Phase.TEST]
-        elif phase == Phase.TEST:
-            phase_indices = [i for i in rng if meta[i]["phase"] == phase]
+        if self._phase == Phase.TRAIN:
+            self._phase_indices = [i for i in rng if meta[i]["fold"] != self._fold and meta[i]["phase"] != Phase.TEST]
+        elif self._phase == Phase.VAL:
+            self._phase_indices = [i for i in rng if meta[i]["fold"] == self._fold and meta[i]["phase"] != Phase.TEST]
         else:
-            raise ValueError("Available phases are: train, val, test")
+            self._phase_indices = [i for i in rng if meta[i]["phase"] == self._phase]
 
-        self._index_map = dict(enumerate(phase_indices))
+
+class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
+
+    def __init__(self, *args, **kwargs) -> NoReturn:
+        super().__init__(*args, **kwargs)
+
+        phase_indices = [i for i in self._phase_indices
+                         if self._reader.meta[i]["additional"]["data_provider"] == "radboud"]
+
+
+
+
+        a = 4
+
+
+
+
+
+class PSGATileSequenceClassificationDataset(_BasePSGATileDataset):
+
+    def __init__(self, crop_filter_threshold: float = 0.1, *args, **kwargs) -> NoReturn:
+        super().__init__(*args, **kwargs)
+        self._crop_filter_threshold = crop_filter_threshold
+        self._index_map = dict(enumerate(self._phase_indices))
 
     def __len__(self) -> int:
         return len(self._index_map)
