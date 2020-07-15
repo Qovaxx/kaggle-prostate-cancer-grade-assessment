@@ -200,9 +200,9 @@ class BaseBatchProcessor(ABC):
     def test_step(self, model: nn.Module, batch: Dict[str, torch.Tensor], **kwargs) -> Dict[str, Any]:
         ...
 
-    def estimate(self, target: str, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+    def estimate(self, name: str, inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         estimators = self._experiment.losses
         if self._experiment.metrics:
             estimators.update(self._experiment.metrics)
 
-        return estimators[target](predictions, targets)
+        return estimators[name](inputs, targets)

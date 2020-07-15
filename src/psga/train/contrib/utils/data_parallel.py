@@ -50,14 +50,14 @@ class BalancedDataParallelCriterion(DataParallel):
 		lock = threading.Lock()
 		results = {}
 
-		def _worker(i, module: T, input: Tuple[torch.Tensor], target: Tuple[torch.Tensor],
+		def _worker(i, module: T, inputs: Tuple[torch.Tensor], targets: Tuple[torch.Tensor],
 		            kwargs, device: Optional[int] = None) -> NoReturn:
 			torch.set_grad_enabled(torch.is_grad_enabled())
 			if device is None:
-				device = input[0].get_device()
+				device = inputs[0].get_device()
 			try:
 				with torch.cuda.device(device):
-					output = module(*input, *target, **kwargs)
+					output = module(*inputs, *targets, **kwargs)
 				with lock:
 					results[i]: torch.Tensor = output
 			except Exception as e:

@@ -134,9 +134,13 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
         mask_tiles, _ = slicer(mask, non_empty_tiles_indices)
 
         if self._subsample_tiles_count:
-            batch_indices = np.random.choice(list(range(image_tiles.shape[0])), size=self._subsample_tiles_count, replace=False)
-            image_tiles = image_tiles[batch_indices]
-            mask_tiles = mask_tiles[batch_indices]
+            selected_indices = np.random.choice(list(range(image_tiles.shape[0])), size=self._subsample_tiles_count,
+                                                replace=False)
+        else:
+            selected_indices = list(range(image_tiles.shape[0]))
+
+        image_tiles = image_tiles[selected_indices]
+        mask_tiles = mask_tiles[selected_indices]
 
         if actual_tile_size != self._pixel_tile_size:
             image_tiles = zoom_tiles(image_tiles, shape=(self._pixel_tile_size, self._pixel_tile_size))
@@ -152,7 +156,9 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
         if self._label_binning:
             labels = [bin_label(x, classes=len(grader.isup_grades)) for x in labels]
 
-        return {"image": image_tiles, "target": labels}
+        items = item * 10**4 + selected_indices # 10**4 it's dirty hack to generate unique crop index
+
+        return {"item": items, "image": image_tiles, "target": labels}
 
     @staticmethod
     def fast_collate_fn(batch: List[Dict[str, Union[torch.Tensor, np.ndarray, int]]]) -> Dict[str, torch.Tensor]:
@@ -162,13 +168,10 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
         else:
             image = torch.cat(collated_images)
 
-        collated_targets = [x["target"] for x in batch]
-        if isinstance(batch[0]["target"][0], (np.ndarray, int)):
-            target = torch.from_numpy(np.concatenate(collated_targets))
-        else:
-            target = torch.cat(collated_targets)
+        target = torch.from_numpy(np.concatenate([x["target"] for x in batch]))
+        item = torch.from_numpy(np.concatenate([x["item"] for x in batch]))
 
-        return {"image": image, "target": target}
+        return {"item": item, "image": image, "target": target}
 
 
 
@@ -206,4 +209,8 @@ class PSGATileSequenceClassificationDataset(_BasePSGATileDataset):
         if self._label_binning:
             label = bin_label(label, classes=len(CancerGradeSystem().isup_grades))
 
-        return {"image": tiles, "target": label, "data_provider": data_provider}
+        return {"item": item, "image": tiles, "target": label, "data_provider": data_provider}
+
+    @staticmethod
+    def fast_collate_fn(batch: List[Dict[str, Union[torch.Tensor, np.ndarray, int]]]) -> Dict[str, torch.Tensor]:
+        raise NotImplementedError

@@ -30,7 +30,7 @@ from src.psga.data_source.utils import (
     plot_meta,
     RGB_TYPE
 )
-from src.psga.image_processing import ImagePreProcessor
+from src.psga.preprocessing import ImagePreProcessor
 from src.psga.phase import Phase
 from src.psga.utils.slide import get_layer_safely
 

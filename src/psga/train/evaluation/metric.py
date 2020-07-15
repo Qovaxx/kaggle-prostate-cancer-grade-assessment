@@ -14,6 +14,6 @@ class QuadraticWeightedKappa(object):
         self._labels = labels
         self._sample_weight = sample_weight
 
-    def __call__(self, input: Tensor, target: Tensor) -> Tensor:
-        return cohen_kappa_score(input, target, weights="quadratic",
+    def __call__(self, inputs: Tensor, targets: Tensor) -> Tensor:
+        return cohen_kappa_score(inputs, targets, weights="quadratic",
                                  labels=self._labels, sample_weight=self._sample_weight)
