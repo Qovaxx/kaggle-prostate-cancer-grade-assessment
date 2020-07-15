@@ -137,7 +137,7 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
             selected_indices = np.random.choice(list(range(image_tiles.shape[0])), size=self._subsample_tiles_count,
                                                 replace=False)
         else:
-            selected_indices = list(range(image_tiles.shape[0]))
+            selected_indices = np.asarray(list(range(image_tiles.shape[0])))
 
         image_tiles = image_tiles[selected_indices]
         mask_tiles = mask_tiles[selected_indices]

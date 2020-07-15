@@ -16,10 +16,10 @@ WORK_DIR = str(ARTIFACTS_DIRPATH / EXPERIMENT_NAME)
 TRAIN_FUNC = "train_tile_classifier"
 
 # Pipeline settings
-DIST_PARAMS = dict(backend="nccl")
+DIST_PARAMS = dict(backend="gloo")
 DEVICE = "cuda"
-DEBUG = False
-DEBUG_TRAIN_SIZE = 20
+DEBUG = True
+DEBUG_TRAIN_SIZE = 500
 MAX_EPOCHS = 4
 
 
@@ -31,18 +31,19 @@ __microns_tile_size=231
 
 DATA_LOADER = dict(
     batch_per_gpu=1,
-    workers_per_gpu=0,
+    train_workers_per_gpu=7,
+    val_workers_per_gpu=2,
     pin_memory=False,
 )
 
 DATA = dict(
     train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5,
                micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True,
-               subsample_tiles_count=12),
-    #
-    # val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
-    #          micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
-    #
+               subsample_tiles_count=14),
+
+    val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
+             micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
+
     # test=dict(type=__data_type, path=__psga_dirpath, phase="test", tiles_intersection=0.0,
     #          micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
 )
@@ -79,7 +80,7 @@ LOSSES = dict(bce_loss=dict(type="torch.nn.BCEWithLogitsLoss", reduction="mean",
 METRICS = dict(qwk_metric=dict(type="src.psga.train.evaluation.metric.QuadraticWeightedKappa", labels=None,
                                sample_weight=None))
 
-BATCH_PROCESSOR = dict(val_batch=100)
+BATCH_PROCESSOR = dict(val_batch=400)
 
 
 # Hook settings
@@ -88,4 +89,7 @@ HOOKS = [
     dict(type="LRSchedulerHook", name="base", metric_name="", by_epoch=True),
     dict(type="ModifiedPytorchDPHook"),
     dict(type="OptimizerHook", name="base"),
+
+    dict(type="EpochMetricHook", metric_name="train_qwk", epoch_metric="qwk_metric"),
+    dict(type="EpochMetricHook", metric_name="val_qwk", epoch_metric="qwk_metric")
 ]

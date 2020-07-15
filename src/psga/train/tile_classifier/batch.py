@@ -1,8 +1,6 @@
 from typing import (
 	Any,
 	Dict,
-	Tuple,
-	Optional,
 	NoReturn
 )
 
@@ -12,7 +10,7 @@ import torch.nn as nn
 from ..contrib.base import BaseBatchProcessor
 from ..evaluation.functional import (
     decode_ordinal_logits,
-    decode_ordinal_labels
+    decode_ordinal_targets
 )
 from ..utils import split_to_chunks
 
@@ -30,12 +28,17 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
 
         logits = model(images)
         loss = self.estimate("bce_loss", logits, targets)
-        metric = self.estimate("qwk_metric", decode_ordinal_logits(logits), decode_ordinal_labels(targets))
+
+        predictions = decode_ordinal_logits(logits)
+        dense_targets = decode_ordinal_targets(targets)
+        metric = self.estimate("qwk_metric", predictions, dense_targets)
 
         return dict(
             base_loss=loss,
             values={"base_loss": loss.item(), "batch_qwk": metric.item()},
-            num_samples=batch["target"].size(0)
+            num_samples=batch["target"].size(0),
+            processed_batch = dict(metric_name="train_qwk", items=batch["item"],
+                                   predictions=predictions, targets=dense_targets),
         )
 
     def val_step(self, model: nn.Module, batch: Dict[str, torch.Tensor], **kwargs) -> Dict[str, Any]:
@@ -51,13 +54,11 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
         predictions = torch.cat(predictions)
 
         return dict(
-            processed_batch=dict(metric_name="qwk", items=batch["item"])
+            values=dict(),
+            num_samples=targets.size(0),
+            processed_batch=dict(metric_name="val_qwk", items=batch["item"],
+                                 predictions=predictions, targets=decode_ordinal_targets(targets))
         )
-
-
-
-
-        a = 4
 
     def test_step(self, model: nn.Module, batch: Dict[str, torch.Tensor], **kwargs) -> Dict[str, Any]:
         return self.val_step(model, batch, **kwargs)

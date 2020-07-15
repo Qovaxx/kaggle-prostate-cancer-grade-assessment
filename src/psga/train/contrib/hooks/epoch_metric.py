@@ -22,7 +22,7 @@ class EpochMetricHook(BaseHook):
 	accepted_keys: ClassVar[Set[str]] = {"metric_name", "items", "predictions", "targets"}
 
 	def __init__(self, metric_name: Union[str, List[str]], epoch_metric: str,
-	             pred_dim: int = 2, target_dim: int = 0,
+	             pred_dim: int = 0, target_dim: int = 0,
 	             outputs_key: str = "processed_batch") -> NoReturn:
 		self._metric_name = metric_name
 		self._epoch_metric = epoch_metric

@@ -31,12 +31,18 @@ class TileClassifierBuilderMixin(_BaseBuilder):
 
     def data_loader(self, mode: str) -> DataLoader:
         dataset = self.dataset(mode)
+
+        if "train" in mode:
+            workers = self.config.DATA_LOADER.train_workers_per_gpu
+        else:
+            workers = self.config.DATA_LOADER.val_workers_per_gpu
+
         return DataLoader(
             dataset=dataset,
             sampler=self.sampler(mode, dataset),
             shuffle=False,
             batch_size=self.config.DATA_LOADER.batch_per_gpu,
-            num_workers=self.config.DATA_LOADER.workers_per_gpu,
+            num_workers=workers,
             pin_memory=self.config.DATA_LOADER.pin_memory,
             drop_last=("train" in mode),
             collate_fn=dataset.fast_collate_fn

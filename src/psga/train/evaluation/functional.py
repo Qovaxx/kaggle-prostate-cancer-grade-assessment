@@ -110,5 +110,5 @@ def decode_ordinal_logits(inputs: torch.Tensor) -> torch.Tensor:
     return predictions
 
 
-def decode_ordinal_labels(inputs: torch.Tensor) -> torch.Tensor:
+def decode_ordinal_targets(inputs: torch.Tensor) -> torch.Tensor:
     return inputs.sum(dim=1).long()
