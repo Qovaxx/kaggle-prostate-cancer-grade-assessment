@@ -18,9 +18,9 @@ TRAIN_FUNC = "train_tile_classifier"
 # Pipeline settings
 DIST_PARAMS = dict(backend="nccl")
 DEVICE = "cuda"
-DEBUG = True
+DEBUG = False
 DEBUG_TRAIN_SIZE = 1000
-MAX_EPOCHS = 1
+MAX_EPOCHS = 4
 
 
 # Data settings
@@ -31,19 +31,20 @@ __microns_tile_size=231
 
 DATA_LOADER = dict(
     batch_per_gpu=1,
-    workers_per_gpu=0,
+    workers_per_gpu=5,
     pin_memory=False,
 )
 
 DATA = dict(
-    train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5, batch_size=5,
-               micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True),
+    train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5,
+               micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True,
+               subsample_tiles_count=10),
 
-    val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
-             micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
-
-    test=dict(type=__data_type, path=__psga_dirpath, phase="test", tiles_intersection=0.0,
-             micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
+    # val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
+    #          micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
+    #
+    # test=dict(type=__data_type, path=__psga_dirpath, phase="test", tiles_intersection=0.0,
+    #          micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
 )
 
 # Transforms settings
@@ -83,7 +84,7 @@ BATCH_PROCESSOR = dict()
 # Hook settings
 HOOKS = [
     dict(type="ModifiedProgressBarHook", bar_width=10),
-
+    dict(type="LRSchedulerHook", name="base", metric_name="", by_epoch=True),
     dict(type="ModifiedPytorchDPHook"),
     dict(type="OptimizerHook", name="base"),
 ]

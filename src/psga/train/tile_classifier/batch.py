@@ -34,7 +34,7 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
 
         return dict(
             base_loss=loss,
-            values={"base_loss": loss.item(), "qwk": metric.item()},
+            values={"base_loss": loss.item(), "batch_qwk": metric.item()},
             num_samples=batch["target"].size(0)
         )
 

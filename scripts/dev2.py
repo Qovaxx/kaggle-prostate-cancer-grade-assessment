@@ -13,28 +13,51 @@ from albumentations.pytorch import ToTensorV2
 from torch.utils.data import DataLoader
 
 
+import torch
+labels = torch.full((1, 20), fill_value=5).long().squeeze()
+labels2 = torch.ones((20), dtype=torch.long) * 5
+
 
 image_transforms = Compose([HorizontalFlip(always_apply=True)])
 crop_transforms = Compose([VerticalFlip(always_apply=True), Blur(blur_limit=30, always_apply=True), Normalize(always_apply=True), ToTensorV2()])
 
 
 dataset = PSGATileMaskedClassificationDataset(path=str(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME),
+                                              fold=0, phase="train",
                                               image_transforms=image_transforms,
                                               crop_transforms=crop_transforms)
 
+from time import time
 
-data_loader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=dataset.fast_collate_fn, num_workers=16)
-for index, batch in enumerate(data_loader):
-    print(f"index {index} \n")
-
-
-
-
+for i in range(len(dataset)):
+    start = time()
+    z = dataset[i]
+    print(time() - start)
 
 
+# 12.583172082901001
+# 5.107307195663452
+# 12.33859395980835
+# 7.231093645095825
+# 1.6814360618591309
+# 3.2577078342437744
+# 2.139578104019165
+# 1.2491989135742188
+# 8.649527549743652
+# 8.436623334884644
 
-    a = 4
 
+
+
+
+
+
+
+
+
+# data_loader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=dataset.fast_collate_fn, num_workers=16)
+# for index, batch in enumerate(data_loader):
+#     print(f"index {index} \n")
 
 
 

@@ -97,7 +97,7 @@ def cohen_kappa_score(input: Tensor, target: Tensor,
 
 def decode_ordinal_logits(input: torch.Tensor) -> torch.Tensor:
     classes = input.size(1)
-    labels = torch.full((1, input.size(0)), fill_value=classes, device=input.device).long().squeeze()
+    labels = torch.ones((input.size(0)), dtype=torch.long) * classes
 
     binned = input.sigmoid().round()
     zero_positions = (binned == 0).nonzero()

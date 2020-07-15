@@ -98,12 +98,12 @@ class _BasePSGATileDataset(Dataset):
 
 class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
 
-    def __init__(self, tiles_intersection: float = 0.5, batch_size: Optional[int] = None,
+    def __init__(self, tiles_intersection: float = 0.5, subsample_tiles_count: Optional[int] = None,
                  *args, **kwargs) -> NoReturn:
         super().__init__(*args, **kwargs)
 
         self._tiles_intersection = tiles_intersection
-        self._batch_size = batch_size
+        self._subsample_tiles_count = subsample_tiles_count
 
         empty_masks = load_file(str(EMPTY_MASKS_PATH))
         phase_indices = [i for i in self._phase_indices
@@ -133,9 +133,10 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
         slicer._fill_value = 0
         mask_tiles, _ = slicer(mask, non_empty_tiles_indices)
 
-        batch_indices = np.random.choice(list(range(image_tiles.shape[0])), size=self._batch_size, replace=False)
-        image_tiles = image_tiles[batch_indices]
-        mask_tiles = mask_tiles[batch_indices]
+        if self._subsample_tiles_count:
+            batch_indices = np.random.choice(list(range(image_tiles.shape[0])), size=self._subsample_tiles_count, replace=False)
+            image_tiles = image_tiles[batch_indices]
+            mask_tiles = mask_tiles[batch_indices]
 
         if actual_tile_size != self._pixel_tile_size:
             image_tiles = zoom_tiles(image_tiles, shape=(self._pixel_tile_size, self._pixel_tile_size))
