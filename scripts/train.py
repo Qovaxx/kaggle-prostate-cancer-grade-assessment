@@ -11,6 +11,7 @@ from ppln.utils.config import Config
 from ppln.utils.misc import init_dist
 from ppln.runner import Runner
 
+from src.psga.train.contrib import hooks
 from src.psga.train.tile_classifier.builder import TileClassifierDDPBuilder, TileClassifierDPBuilder
 from src.psga.train.tile_classifier.batch import TileClassifierBatchProcessor
 
@@ -33,25 +34,21 @@ def train_tile_classifier(config: Config) -> NoReturn:
     else:
         builder = TileClassifierDPBuilder(config)
 
-    # data_loaders = {x: builder.data_loader(x) for x in config.DATA.keys()}
+    data_loaders = {x: builder.data_loader(x) for x in config.DATA.keys()}
     batch_processor = TileClassifierBatchProcessor(builder)
 
-    optimizers = builder.optimizers
-
-    a = 4
-
-    # runner = Runner(
-    # 	model=builder.model,
-    # 	optimizers=builder.optimizers,
-    # 	schedulers=builder.schedulers,
-    # 	hooks=builder.hooks,
-    # 	work_dir=builder.config.WORK_DIR,
-    # 	batch_processor=batch_processor,
-    # )
-    # runner.run(
-    # 	data_loaders=data_loaders,
-    # 	max_epochs=builder.config.MAX_EPOCHS
-    # )
+    runner = Runner(
+    	model=builder.model,
+    	optimizers=builder.optimizers,
+    	schedulers=builder.schedulers,
+    	hooks=builder.hooks,
+    	work_dir=builder.config.WORK_DIR,
+    	batch_processor=batch_processor,
+    )
+    runner.run(
+    	data_loaders=data_loaders,
+    	max_epochs=builder.config.MAX_EPOCHS
+    )
 
 
 if __name__ == "__main__":

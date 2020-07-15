@@ -12,7 +12,7 @@ from src.psga.settings import (
 # Experiment settings
 __postfix = "fold0"
 EXPERIMENT_NAME = osp.splitext(osp.basename(__file__))[0] + "_" + __postfix
-WORKDIR = str(ARTIFACTS_DIRPATH / EXPERIMENT_NAME)
+WORK_DIR = str(ARTIFACTS_DIRPATH / EXPERIMENT_NAME)
 TRAIN_FUNC = "train_tile_classifier"
 
 # Pipeline settings
@@ -30,20 +30,20 @@ __fold = 0
 __microns_tile_size=231
 
 DATA_LOADER = dict(
-    batch_per_gpu=10,
+    batch_per_gpu=1,
     workers_per_gpu=0,
     pin_memory=False,
 )
 
 DATA = dict(
-    train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5, batch_size=20,
+    train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5, batch_size=5,
                micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True),
 
     val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
-             micron_tile_size=__microns_tile_size, crop_emptiness_degree=1, label_binning=True),
+             micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
 
     test=dict(type=__data_type, path=__psga_dirpath, phase="test", tiles_intersection=0.0,
-             micron_tile_size=__microns_tile_size, crop_emptiness_degree=1, label_binning=True),
+             micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
 )
 
 # Transforms settings
@@ -73,10 +73,17 @@ OPTIMIZER = dict(type="torch.optim.Adam", lr=0.01, betas=(0.9, 0.999), eps=1e-08
 
 SCHEDULER = dict(type="torch.optim.lr_scheduler.ExponentialLR", gamma=0.95, last_epoch=-1)
 
-LOSSES = dict(loss=dict(type="torch.nn.BCEWithLogitsLoss", reduction="mean", pos_weight=None))
+LOSSES = dict(bce=dict(type="torch.nn.BCEWithLogitsLoss", reduction="mean", pos_weight=None))
 
 METRICS = dict(qwk=dict(type="src.psga.train.evaluation.metric.QuadraticWeightedKappa", labels=None, sample_weight=None))
 
+BATCH_PROCESSOR = dict()
+
 
 # Hook settings
-HOOKS = []
+HOOKS = [
+    dict(type="ModifiedProgressBarHook", bar_width=10),
+
+    dict(type="ModifiedPytorchDPHook"),
+    dict(type="OptimizerHook", name="base"),
+]
