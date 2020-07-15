@@ -13,18 +13,6 @@ from albumentations.pytorch import ToTensorV2
 from torch.utils.data import DataLoader
 
 
-import cv2
-import numpy as np
-from src.psga.transforms.slicer import TilesSlicer
-
-
-
-
-
-
-
-
-
 
 image_transforms = Compose([HorizontalFlip(always_apply=True)])
 crop_transforms = Compose([VerticalFlip(always_apply=True), Blur(blur_limit=30, always_apply=True), Normalize(always_apply=True), ToTensorV2()])
@@ -33,14 +21,11 @@ crop_transforms = Compose([VerticalFlip(always_apply=True), Blur(blur_limit=30, 
 dataset = PSGATileMaskedClassificationDataset(path=str(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME),
                                               image_transforms=image_transforms,
                                               crop_transforms=crop_transforms)
-dataset[1000]
 
 
-# dataset = PSGATileSequenceClassificationDataset(path=str(PROCESSED_DIRPATH / KAGGLE_DATASET_NAME),
-#                                                 image_transforms=image_transforms,
-#                                                 crop_transforms=crop_transforms)
-# z = dataset[123]
-# # data_loader = DataLoader(dataset, batch_size=3, shuffle=True, collate_fn=dataset.fast_collate_fn)
+data_loader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=dataset.fast_collate_fn, num_workers=16)
+for index, batch in enumerate(data_loader):
+    print(f"index {index} \n")
 
 
 
@@ -48,7 +33,7 @@ dataset[1000]
 
 
 
-
+    a = 4
 
 
 
