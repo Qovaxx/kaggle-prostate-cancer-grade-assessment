@@ -12,6 +12,10 @@ from albumentations import Compose, HorizontalFlip, Blur, Normalize, VerticalFli
 from albumentations.pytorch import ToTensorV2
 from torch.utils.data import DataLoader
 
+from timm.models.senet import seresnext50_32x4d
+
+model = seresnext50_32x4d()
+z = list(model.named_modules())
 
 
 image_transforms = Compose([HorizontalFlip(always_apply=True)])
