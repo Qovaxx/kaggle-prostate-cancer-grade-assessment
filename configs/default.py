@@ -31,15 +31,15 @@ __microns_tile_size=231
 
 DATA_LOADER = dict(
     batch_per_gpu=1,
-    train_workers_per_gpu=7,
-    val_workers_per_gpu=2,
+    train_workers_per_gpu=0, # 7
+    val_workers_per_gpu=0, # 2
     pin_memory=False,
 )
 
 DATA = dict(
-    train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5,
-               micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True,
-               subsample_tiles_count=14),
+    # train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5,
+    #            micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True,
+    #            subsample_tiles_count=14),
 
     val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
              micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
@@ -77,8 +77,9 @@ SCHEDULER = dict(type="torch.optim.lr_scheduler.ExponentialLR", gamma=0.95, last
 
 LOSSES = dict(bce_loss=dict(type="torch.nn.BCEWithLogitsLoss", reduction="mean", pos_weight=None))
 
-METRICS = dict(qwk_metric=dict(type="src.psga.train.evaluation.metric.QuadraticWeightedKappa", labels=None,
-                               sample_weight=None))
+METRICS = dict(qwk_metric=dict(type="src.psga.train.evaluation.metric.QuadraticWeightedKappa",
+                               labels=None, sample_weight=None),
+               accuracy_metric=dict(type="src.psga.train.evaluation.metric.Accuracy", top_k=1))
 
 BATCH_PROCESSOR = dict(val_batch=400)
 
