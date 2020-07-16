@@ -21,13 +21,13 @@ from ppln.utils.misc import get_dist_info
 class EpochMetricHook(BaseHook):
 	accepted_keys: ClassVar[Set[str]] = {"metric_name", "items", "predictions", "targets"}
 
-	def __init__(self, metric_name: Union[str, List[str]], epoch_metric: str,
-	             pred_dim: int = 0, target_dim: int = 0,
+	def __init__(self, name: Union[str, List[str]], runner_metric: str,
+	             inputs_dim: int = 0, targets_dim: int = 0,
 	             outputs_key: str = "processed_batch") -> NoReturn:
-		self._metric_name = metric_name
-		self._epoch_metric = epoch_metric
-		self._pred_dim = pred_dim
-		self._target_dim = target_dim
+		self._name = name
+		self._runner_metric = runner_metric
+		self._inputs_dim = inputs_dim
+		self._targets_dim = targets_dim
 		self._outputs_key = outputs_key
 		self._accumulator = list()
 
@@ -43,7 +43,7 @@ class EpochMetricHook(BaseHook):
 		if processed_batch:
 			assert self.accepted_keys == set(processed_batch.keys()), \
 				f"The keys specified for '{self._outputs_key}' must match with {self.accepted_keys}"
-			if self._metric_name == processed_batch["metric_name"]:
+			if self._name == processed_batch["metric_name"]:
 				processed_batch = {k: v.cpu().detach() for k, v in processed_batch.items() if k != "metric_name"}
 				self._accumulator.append(processed_batch)
 
@@ -51,14 +51,14 @@ class EpochMetricHook(BaseHook):
 		if self._accumulator:
 			is_distributed = dist.is_initialized()
 			items = self._get("items", dim=0, is_distributed=is_distributed)
-			predictions = self._get("predictions", dim=self._pred_dim, is_distributed=is_distributed)
-			targets = self._get("targets", dim=self._target_dim, is_distributed=is_distributed)
+			predictions = self._get("predictions", dim=self._inputs_dim, is_distributed=is_distributed)
+			targets = self._get("targets", dim=self._targets_dim, is_distributed=is_distributed)
 
 			indices = items.argsort()
-			predictions = predictions.index_select(self._pred_dim, indices)
-			targets = targets.index_select(self._target_dim, indices)
-			metric = runner.batch_processor.estimate(self._epoch_metric, predictions, targets)
-			runner.log_buffer.output[self._metric_name] = metric.item()
+			predictions = predictions.index_select(self._inputs_dim, indices)
+			targets = targets.index_select(self._targets_dim, indices)
+			metric = runner.batch_processor.estimate(self._runner_metric, predictions, targets)
+			runner.log_buffer.output[self._name] = metric.item()
 
 	def _get(self, key: str, dim: int, is_distributed: bool) -> torch.Tensor:
 		tensor = torch.cat([x[key] for x in self._accumulator], dim=dim)

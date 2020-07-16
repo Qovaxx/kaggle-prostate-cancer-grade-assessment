@@ -49,4 +49,4 @@ pipeline:
 	bash ./tools/train.sh \
 		--config-path=./configs/default.py \
 		--cuda-visible-devices=0,1,2,3 \
-		--is-distributed=true
+		--is-distributed=false

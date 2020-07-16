@@ -110,6 +110,8 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
                          if self._reader.meta[i]["additional"]["data_provider"] == "radboud"
                          and self._reader.meta[i]["name"] not in empty_masks
                          and self._reader.meta[i]["mask"] is not None]
+        if self._phase == Phase.VAL:
+            phase_indices = phase_indices[:20]
         self._index_map = dict(enumerate(phase_indices))
 
     def __len__(self) -> int:

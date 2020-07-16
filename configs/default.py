@@ -31,19 +31,19 @@ __microns_tile_size=231
 
 DATA_LOADER = dict(
     batch_per_gpu=1,
-    train_workers_per_gpu=5, # DP 5
-    val_workers_per_gpu=2, # DP 2
+    train_workers_per_gpu=0, # 5
+    val_workers_per_gpu=0, # 2
     pin_memory=False,
 )
 
 DATA = dict(
     train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5,
                micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True,
-               subsample_tiles_count=26), # DP 13
-
+               subsample_tiles_count=11),
+    #
     # val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
     #          micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
-    #
+
 )
 
 # Transforms settings
@@ -72,7 +72,7 @@ MODEL = dict(type="timm.models.senet.seresnext50_32x4d", pretrained=True, num_cl
 OPTIMIZER = dict(type="torch.optim.SGD", lr=0.01, momentum=0.9, weight_decay=0.0005, dampening=0, nesterov=False)
 
 SCHEDULER = dict(type="torch.optim.lr_scheduler.MultiStepLR", last_epoch=-1, gamma=0.1,
-                 milestones=[3000, 10000, 20000, 30000])
+                 milestones=[50, 1200, 5000, 10000])
 
 LOSSES = dict(bce_loss=dict(type="torch.nn.BCEWithLogitsLoss", reduction="mean", pos_weight=None))
 
@@ -80,26 +80,25 @@ METRICS = dict(qwk_metric=dict(type="src.psga.train.evaluation.metric.QuadraticW
                                labels=None, sample_weight=None),
                accuracy_metric=dict(type="src.psga.train.evaluation.metric.Accuracy", top_k=1))
 
-BATCH_PROCESSOR = dict(val_batch=150) # DP 400
+BATCH_PROCESSOR = dict(val_batch=380) # DP 400 DDP 90 APEX 150
 
 
 # Hook settings
 HOOKS = [
     dict(type="ModifiedProgressBarHook", bar_width=10),
-    dict(type="ModifiedTextLoggerHook"),
-    dict(type="TensorboardLoggerHook", log_dir=f"{WORK_DIR}/tensorboard"),
-    dict(type="ModifiedCheckpointHook", metric_name="val_qwk", num_checkpoints=20, mode="max",
-         save_optimizer=True, save_scheduler=True),
-    dict(type="LRSchedulerHook", name="base", metric_name="", by_epoch=True),
+    # dict(type="ModifiedTextLoggerHook"),
+    # dict(type="TensorboardLoggerHook", log_dir=f"{WORK_DIR}/tensorboard"),
+    # dict(type="ModifiedCheckpointHook", metric_name="val_qwk", num_checkpoints=20, mode="max",
+    #      save_optimizer=True, save_scheduler=True),
+    dict(type="LRSchedulerHook", name="base", metric_name="", by_epoch=False),
 
     dict(type="ModelFreezeHook", modules=["layer0", "layer1", "layer2", "layer3", "layer4"],
          train=False, unfreeze_epoch=3),
     dict(type="NormalizationLockHook", train=False, requires_grad=None),
 
-    dict(type="ApexInitializeHook", opt_level="O1"),
-    dict(type="ApexDDPHook", delay_allreduce=True),
-    dict(type="ApexOptimizerHook"),
+    dict(type="ModifiedPytorchDPHook"),
+    dict(type="OptimizerHook", name="base"),
 
-    dict(type="EpochMetricHook", metric_name="train_qwk", epoch_metric="qwk_metric"),
-    dict(type="EpochMetricHook", metric_name="val_qwk", epoch_metric="qwk_metric")
+    dict(type="EpochMetricHook", name="train_qwk", runner_metric="qwk_metric"),
+    dict(type="EpochMetricHook", name="val_qwk", runner_metric="qwk_metric")
 ]
