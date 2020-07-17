@@ -67,7 +67,8 @@ def confusion_matrix(inputs: Tensor, targets: Tensor,
 def cohen_kappa_score(inputs: Tensor, targets: Tensor,
                       weights: Optional[str] = None,
                       labels: Optional[Tensor] = None,
-                      sample_weight: Optional[Tensor] = None) -> Tensor:
+                      sample_weight: Optional[Tensor] = None,
+                      eps: float = 1e-6) -> Tensor:
     """
     :param inputs: 1-dim vector
     :param targets:  1-dim vector
@@ -91,7 +92,7 @@ def cohen_kappa_score(inputs: Tensor, targets: Tensor,
     else:
         raise ValueError("Unknown kappa weighting type.")
 
-    k = torch.sum(weights_matrix * cm_matrix).float() / torch.sum(weights_matrix * expected_matrix)
+    k = torch.sum(weights_matrix * cm_matrix).float() / (torch.sum(weights_matrix * expected_matrix) + eps)
     return 1 - k
 
 

@@ -41,8 +41,8 @@ DATA = dict(
                micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True,
                subsample_tiles_count=11),
 
-    # val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
-    #          micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
+    val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
+             micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
 
 )
 
@@ -78,7 +78,7 @@ LOSSES = dict(bce_loss=dict(type="torch.nn.BCEWithLogitsLoss", reduction="mean",
 
 METRICS = dict(qwk_metric=dict(type="src.psga.train.evaluation.metric.QuadraticWeightedKappa",
                                labels=None, sample_weight=None),
-               acc_metric=dict(type="src.psga.train.evaluation.metric.Accuracy", top_k=1))
+               acc_metric=dict(type="src.psga.train.evaluation.metric.Accuracy"))
 
 BATCH_PROCESSOR = dict(val_batch=380) # DP 400 DDP 90 APEX 150
 
@@ -99,5 +99,5 @@ HOOKS = [
     dict(type="ModifiedPytorchDPHook"),
     dict(type="OptimizerHook", name="base"),
 
-    dict(type="EpochMetricHook", handle=dict(acc="acc_metric", qwk="qwk_metric"))
+    dict(type="EpochMetricHook", handle=dict(qwk="qwk_metric"))
 ]
