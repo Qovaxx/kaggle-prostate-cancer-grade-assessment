@@ -1,5 +1,9 @@
 from src.psga.settings import PROCESSED_DIRPATH, KAGGLE_DATASET_NAME
 from src.psga.data_source.provider.kaggle import PSGATileSequenceClassificationDataset, PSGATileMaskedClassificationDataset
+from albumentations import Compose, HorizontalFlip, Blur, Normalize, VerticalFlip
+from albumentations.pytorch import ToTensorV2
+from torch.utils.data import DataLoader
+import numpy as np
 
 import matplotlib.pyplot as plt
 def show(image):
@@ -7,18 +11,24 @@ def show(image):
     plt.imshow(image)
     plt.show()
 
+from collections import Counter, defaultdict
+from numpy.random import choice
+import random
+from typing import Iterable, List
 
-from albumentations import Compose, HorizontalFlip, Blur, Normalize, VerticalFlip
-from albumentations.pytorch import ToTensorV2
-from torch.utils.data import DataLoader
-
-from timm.models.senet import seresnext50_32x4d
-
-
-
-from src.psga.train.evaluation.functional import cohen_kappa_score
+labels = [5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] + [10] * 30 + [332] * 2  + [111] * 11111
+# count = 20
 
 
+
+
+
+indices = balanced_subsample(labels, 20)
+print(Counter(np.array(labels)[indices]))
+
+
+
+a = 4
 
 
 

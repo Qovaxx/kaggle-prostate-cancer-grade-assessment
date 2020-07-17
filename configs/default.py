@@ -19,8 +19,8 @@ TRAIN_FUNC = "train_tile_classifier"
 DIST_PARAMS = dict(backend="nccl")
 DEVICE = "cuda"
 DEBUG = True
-DEBUG_TRAIN_SIZE = 40
-MAX_EPOCHS = 2
+DEBUG_TRAIN_SIZE = 23
+MAX_EPOCHS = 5
 
 
 # Data settings
@@ -39,7 +39,7 @@ DATA_LOADER = dict(
 DATA = dict(
     train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5,
                micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True,
-               subsample_tiles_count=11),
+               subsample_tiles_count=10, balance_subsample=True),
 
     val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
              micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
@@ -80,7 +80,7 @@ METRICS = dict(qwk_metric=dict(type="src.psga.train.evaluation.metric.QuadraticW
                                labels=None, sample_weight=None),
                acc_metric=dict(type="src.psga.train.evaluation.metric.Accuracy"))
 
-BATCH_PROCESSOR = dict(val_batch=380) # DP 400 DDP 90 APEX 150
+BATCH_PROCESSOR = dict(val_batch=90) # DP 380 DDP 90 APEX 150
 
 
 # Hook settings
@@ -97,7 +97,7 @@ HOOKS = [
     dict(type="NormalizationLockHook", train=False, requires_grad=None),
 
     dict(type="ModifiedPytorchDPHook"),
-    dict(type="OptimizerHook", name="base"),
+    # dict(type="OptimizerHook", name="base"),
 
     dict(type="EpochMetricHook", handle=dict(qwk="qwk_metric"))
 ]

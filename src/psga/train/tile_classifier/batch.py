@@ -13,7 +13,14 @@ from ..evaluation.functional import (
     decode_ordinal_targets
 )
 from ..utils import to_chunks
-
+import numpy as np
+import matplotlib.pyplot as plt
+def show(image):
+    plt.figure()
+    image = image * np.array([32.75003156, 59.0587483, 40.4596739]) + np.array([236.71301302, 217.72548731, 229.42839042])
+    plt.imshow(image)
+    plt.show()
+# viz = np.moveaxis(batch_images.cpu().numpy(), 1, -1)
 
 
 class TileClassifierBatchProcessor(BaseBatchProcessor):

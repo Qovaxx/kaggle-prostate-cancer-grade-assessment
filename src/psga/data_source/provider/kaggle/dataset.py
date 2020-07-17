@@ -3,17 +3,20 @@ from typing import (
     Optional,
     ClassVar,
     List,
-    Tuple,
     NoReturn,
     Union
 )
 
-import cv2
 import torch
 import albumentations as A
 import numpy as np
 from torch.utils.data import Dataset
 
+from .utils import (
+    zoom_tiles,
+    bin_label,
+    balanced_subsample
+)
 from ...read import TIFFReader
 from ...base import BasePhaseSplitter
 from ...split import CleanedPhaseSplitter
@@ -34,16 +37,6 @@ from ....settings import (
     EMPTY_MASKS_PATH,
     MAX_CM_RESOLUTION
 )
-
-
-def zoom_tiles(tiles: np.ndarray, shape: Tuple[int, int]) -> np.ndarray:
-    return np.asarray([cv2.resize(tile, dsize=shape, interpolation=cv2.INTER_LANCZOS4) for tile in tiles])
-
-
-def bin_label(label: int, classes: int) -> np.ndarray:
-    binning = np.zeros(shape=(classes - 1))
-    binning[:label] = 1
-    return binning
 
 
 class _BasePSGATileDataset(Dataset):
@@ -99,11 +92,12 @@ class _BasePSGATileDataset(Dataset):
 class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
 
     def __init__(self, tiles_intersection: float = 0.5, subsample_tiles_count: Optional[int] = None,
-                 *args, **kwargs) -> NoReturn:
+                 balance_subsample: bool = False, *args, **kwargs) -> NoReturn:
         super().__init__(*args, **kwargs)
 
         self._tiles_intersection = tiles_intersection
         self._subsample_tiles_count = subsample_tiles_count
+        self._balance_subsample = balance_subsample
 
         empty_masks = load_file(str(EMPTY_MASKS_PATH))
         phase_indices = [i for i in self._phase_indices
@@ -113,6 +107,7 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
         if self._phase == Phase.VAL:
             phase_indices = phase_indices[:20]
         self._index_map = dict(enumerate(phase_indices))
+        self._grader = CancerGradeSystem()
 
     def __len__(self) -> int:
         return len(self._index_map)
@@ -135,14 +130,19 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
         slicer._fill_value = 0
         mask_tiles, _ = slicer(mask, non_empty_tiles_indices)
 
+        labels = [mask_to_gleason_score(x) for x in mask_tiles]
+        labels = [self._grader.gleason_to_isup(x.major_value, x.minor_value) for x in labels]
+
+        selected_indices = np.asarray(list(range(image_tiles.shape[0])))
         if self._subsample_tiles_count:
-            selected_indices = np.random.choice(list(range(image_tiles.shape[0])), size=self._subsample_tiles_count,
-                                                replace=False)
-        else:
-            selected_indices = np.asarray(list(range(image_tiles.shape[0])))
+            if self._balance_subsample:
+                selected_indices = balanced_subsample(labels, count=self._subsample_tiles_count)
+            else:
+                selected_indices = np.random.choice(list(range(image_tiles.shape[0])),
+                                                    size=self._subsample_tiles_count, replace=False)
 
         image_tiles = image_tiles[selected_indices]
-        mask_tiles = mask_tiles[selected_indices]
+        labels = [labels[i] for i in selected_indices]
 
         if actual_tile_size != self._pixel_tile_size:
             image_tiles = zoom_tiles(image_tiles, shape=(self._pixel_tile_size, self._pixel_tile_size))
@@ -152,13 +152,9 @@ class PSGATileMaskedClassificationDataset(_BasePSGATileDataset):
             lib = np if isinstance(image_tiles[0], np.ndarray) else torch
             image_tiles = lib.stack(image_tiles)
 
-        grader = CancerGradeSystem()
-        labels = [mask_to_gleason_score(x) for x in mask_tiles]
-        labels = [grader.gleason_to_isup(x.major_value, x.minor_value) for x in labels]
-        if self._label_binning:
-            labels = [bin_label(x, classes=len(grader.isup_grades)) for x in labels]
-
         items = item * 10**4 + selected_indices # 10**4 it's dirty hack to generate unique crop index
+        if self._label_binning:
+            labels = [bin_label(x, classes=len(self._grader.isup_grades)) for x in labels]
 
         return {"item": items, "image": image_tiles, "target": labels}
 
