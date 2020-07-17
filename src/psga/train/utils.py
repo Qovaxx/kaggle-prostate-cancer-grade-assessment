@@ -3,7 +3,7 @@ from typing import List
 import torch
 
 
-def split_to_chunks(batch: torch.Tensor, chunk_size: int, batch_safe: bool = True) -> List[torch.Tensor]:
+def to_chunks(batch: torch.Tensor, chunk_size: int, batch_safe: bool = True) -> List[torch.Tensor]:
     chunks = list(torch.split(batch, chunk_size, dim=0))
     if batch_safe:
         gpu_count = torch.cuda.device_count()

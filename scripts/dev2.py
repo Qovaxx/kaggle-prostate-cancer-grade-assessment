@@ -14,8 +14,15 @@ from torch.utils.data import DataLoader
 
 from timm.models.senet import seresnext50_32x4d
 
-model = seresnext50_32x4d()
-z = list(model.named_modules())
+
+
+from src.psga.train.evaluation.functional import cohen_kappa_score
+
+
+
+
+
+
 
 
 image_transforms = Compose([HorizontalFlip(always_apply=True)])
@@ -67,25 +74,3 @@ for i in range(len(dataset)):
 # images = images.cuda()
 #
 # embeddings = embedder(images)["embedding"].flatten(1)
-
-
-# embedder_batch_size = 100
-#
-# batch = [torch.rand(torch.randint(low=190, high=200, size=(1,)).item(), 3, 224, 224) for _ in range(5)]
-# model = seresnext50_32x4d()
-# embedder = IntermediateLayerGetter(model, return_layers={"avg_pool": "embedding"})
-# embedder.cuda()
-# embedder.eval()
-#
-# with torch.no_grad():
-#     batch_embeddings = list()
-#     for sample in batch:
-#         embeddings = list()
-#         chunks_count = torch.ceil(torch.tensor(sample.size(0) / embedder_batch_size)).int().item()
-#         for chunk in torch.chunk(sample, chunks=chunks_count, dim=0):
-#             chunk = chunk.cuda()
-#             embeddings.extend(embedder(chunk)["embedding"].flatten(1).cpu())
-#
-#         batch_embeddings.append(torch.stack(embeddings))
-
-

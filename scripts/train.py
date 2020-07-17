@@ -4,6 +4,7 @@ def warn(*args, **kwargs):
 warnings.warn = warn
 
 import argparse
+import logging
 from typing import NoReturn
 
 import torch.distributed as dist
@@ -52,6 +53,7 @@ def train_tile_classifier(config: Config) -> NoReturn:
 
 
 if __name__ == "__main__":
+    logging.getLogger().addHandler(logging.StreamHandler())
     args = parse_args()
     config = Config.fromfile(args.config_path)
 

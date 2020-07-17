@@ -1,10 +1,10 @@
+from collections import defaultdict
 from typing import (
-	ClassVar,
-	Dict,
-	NoReturn,
-	Union,
-	List,
-	Set
+    ClassVar,
+    Dict,
+    List,
+    NoReturn,
+    Set
 )
 
 import torch
@@ -15,56 +15,62 @@ from ppln.hooks.base import BaseHook
 from ppln.hooks.priority import Priority
 from ppln.utils.misc import get_dist_info
 
+from ..utils.dist import all_gather_cpu
 
 
 @HOOKS.register_module
 class EpochMetricHook(BaseHook):
-	accepted_keys: ClassVar[Set[str]] = {"metric_name", "items", "predictions", "targets"}
 
-	def __init__(self, name: Union[str, List[str]], runner_metric: str,
-	             inputs_dim: int = 0, targets_dim: int = 0,
-	             outputs_key: str = "processed_batch") -> NoReturn:
-		self._name = name
-		self._runner_metric = runner_metric
-		self._inputs_dim = inputs_dim
-		self._targets_dim = targets_dim
-		self._outputs_key = outputs_key
-		self._accumulator = list()
+    accepted_keys: ClassVar[Set[str]] = {"items", "inputs", "targets"}
 
-	@property
-	def priority(self) -> Priority:
-		return Priority.NORMAL
+    def __init__(self, handle: Dict[str, str],
+                 inputs_dim: int = 0, targets_dim: int = 0,
+                 outputs_key: str = "epoch_metric") -> NoReturn:
+        self._handle = handle
+        self._inputs_dim = inputs_dim
+        self._targets_dim = targets_dim
+        self._outputs_key = outputs_key
+        self._accumulator = defaultdict(list)
+        self._is_distributed = dist.is_initialized()
 
-	def before_epoch(self, runner: Runner) -> NoReturn:
-		self._accumulator.clear()
+    @property
+    def priority(self) -> Priority:
+        return Priority.NORMAL
 
-	def after_iter(self, runner: Runner) -> NoReturn:
-		processed_batch: Dict[str, Union[str, torch.Tensor]] = runner.outputs.get(self._outputs_key, None)
-		if processed_batch:
-			assert self.accepted_keys == set(processed_batch.keys()), \
-				f"The keys specified for '{self._outputs_key}' must match with {self.accepted_keys}"
-			if self._name == processed_batch["metric_name"]:
-				processed_batch = {k: v.cpu().detach() for k, v in processed_batch.items() if k != "metric_name"}
-				self._accumulator.append(processed_batch)
+    def before_epoch(self, runner: Runner) -> NoReturn:
+        self._accumulator.clear()
 
-	def after_epoch(self, runner: Runner) -> NoReturn:
-		if self._accumulator:
-			is_distributed = dist.is_initialized()
-			items = self._get("items", dim=0, is_distributed=is_distributed)
-			predictions = self._get("predictions", dim=self._inputs_dim, is_distributed=is_distributed)
-			targets = self._get("targets", dim=self._targets_dim, is_distributed=is_distributed)
+    def after_iter(self, runner: Runner) -> NoReturn:
+        predictions: Dict[str, Dict[str, torch.Tensor]] = runner.outputs.get(self._outputs_key, None)
+        if predictions and all([self.accepted_keys == set(v.keys()) for k, v in predictions.items()]):
 
-			indices = items.argsort()
-			predictions = predictions.index_select(self._inputs_dim, indices)
-			targets = targets.index_select(self._targets_dim, indices)
-			metric = runner.batch_processor.estimate(self._runner_metric, predictions, targets)
-			runner.log_buffer.output[self._name] = metric.item()
+            for metric in predictions.keys():
+                batch = predictions[metric]
+                self._accumulator[metric].append({k: v.cpu().detach() for k, v in batch.items()})
 
-	def _get(self, key: str, dim: int, is_distributed: bool) -> torch.Tensor:
-		tensor = torch.cat([x[key] for x in self._accumulator], dim=dim)
-		if is_distributed:
-			_, world_size = get_dist_info()
-			tensors_gather = [tensor.clone() for _ in range(world_size)]
-			dist.all_gather(tensors_gather, tensor)
-			tensor =  torch.cat(tensors_gather, dim=dim)
-		return tensor
+    def after_epoch(self, runner: Runner) -> NoReturn:
+        for metric_name in self._handle.keys():
+            accumulated = self._accumulator.get(metric_name, None)
+
+            if accumulated:
+                items = self._flat(accumulated, key="items", dim=0)
+                inputs = self._flat(accumulated, key="inputs", dim=self._inputs_dim)
+                targets = self._flat(accumulated, key="targets", dim=self._targets_dim)
+
+                indices = items.argsort()
+                inputs = inputs.index_select(self._inputs_dim, indices)
+                targets = targets.index_select(self._targets_dim, indices)
+
+                rank, _ = get_dist_info()
+                if rank == 0:
+                    func_name = self._handle[metric_name]
+                    metric = runner.batch_processor.estimate(func_name, inputs, targets)
+                    runner.log_buffer.output[metric_name] = metric.item()
+
+    def _flat(self, data: List[Dict[str, torch.Tensor]], key: str, dim: int) -> torch.Tensor:
+        tensor = torch.cat([batch[key] for batch in data], dim=dim)
+        if self._is_distributed:
+            gathered_tensors = all_gather_cpu(tensor)
+            tensor = torch.cat(gathered_tensors, dim=dim)
+
+        return tensor

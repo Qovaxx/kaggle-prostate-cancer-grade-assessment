@@ -12,7 +12,7 @@ from ..evaluation.functional import (
     decode_ordinal_logits,
     decode_ordinal_targets
 )
-from ..utils import split_to_chunks
+from ..utils import to_chunks
 
 
 
@@ -23,50 +23,53 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
         self._val_batch = self._config.BATCH_PROCESSOR.val_batch
 
     def train_step(self, model: nn.Module, batch: Dict[str, torch.Tensor], **kwargs) -> Dict[str, Any]:
-        images = batch["image"].to(self._experiment.device)
-        targets = batch["target"].to(self._experiment.device)
+        batch_items = batch["item"]
+        batch_images = batch["image"].to(self._experiment.device)
+        batch_targets = batch["target"].to(self._experiment.device)
 
-        logits = model(images)
-        loss = self.estimate("bce_loss", logits, targets)
+        logits = model(batch_images)
+        loss = self.estimate("bce_loss", logits, batch_targets)
 
         predictions = decode_ordinal_logits(logits)
-        dense_targets = decode_ordinal_targets(targets)
-        acc = self.estimate("accuracy_metric", logits, dense_targets)
-        qwk = self.estimate("qwk_metric", predictions, dense_targets)
+        targets = decode_ordinal_targets(batch_targets)
+        qwk = self.estimate("qwk_metric", predictions, targets)
+        acc = self.estimate("acc_metric", logits, targets)
 
         return dict(
             base_loss=loss,
-            values={"base_loss": loss.item(), "qwk": qwk.item(), "acc": acc.item()},
-            num_samples=batch["target"].size(0),
-            processed_batch = dict(metric_name="train_qwk", items=batch["item"],
-                                   predictions=predictions, targets=dense_targets),
+            values=dict(base_loss=loss.item(), batch_qwk=qwk.item(), batch_acc=acc.item()),
+            num_samples=batch_targets.size(0),
+            epoch_metric = dict(
+                qwk=dict(items=batch_items, inputs=predictions, targets=targets),
+                acc=dict(items=batch_items, inputs=logits, targets=targets)
+            )
         )
 
     def val_step(self, model: nn.Module, batch: Dict[str, torch.Tensor], **kwargs) -> Dict[str, Any]:
-        images = batch["image"]
-        targets = batch["target"]
-        images_chunks = split_to_chunks(images, chunk_size=self._val_batch)
-        targets_chunks = split_to_chunks(targets, chunk_size=self._val_batch)
+        batch_items = batch["item"]
+        batch_images = batch["image"]
+        batch_targets = batch["target"]
 
-        predictions = list()
-        acc = list()
+        predictions_accum = list()
+        logits_accum = list()
 
-        for chunk_images, chunk_targets in zip(images_chunks, targets_chunks):
-            chunk_images = chunk_images.to(self._experiment.device)
-            chunk_targets = chunk_targets.to(self._experiment.device)
+        for chunked_images in to_chunks(batch_images, self._val_batch):
+            chunked_images = chunked_images.to(self._experiment.device)
+            logits = model(chunked_images)
+            predictions = decode_ordinal_logits(logits)
+            predictions_accum.append(predictions)
+            logits_accum.append(logits)
 
-            chunk_logits = model(chunk_images)
-            predictions.append(decode_ordinal_logits(chunk_logits))
-            acc.append(self.estimate("accuracy_metric", chunk_logits, decode_ordinal_targets(chunk_targets)))
-
-        acc = torch.cat(acc).mean()
-        predictions = torch.cat(predictions)
+        predictions_accum = torch.cat(predictions_accum)
+        logits_accum = torch.cat(logits_accum)
 
         return dict(
-            values={"acc": acc.item()},
-            num_samples=targets.size(0),
-            processed_batch=dict(metric_name="val_qwk", items=batch["item"],
-                                 predictions=predictions, targets=decode_ordinal_targets(targets))
+            values=dict(),
+            num_samples=batch_targets.size(0),
+            epoch_metric=dict(
+                qwk=dict(items=batch_items, inputs=predictions_accum, targets=batch_targets),
+                acc=dict(items=batch_items, inputs=logits_accum, targets=batch_targets)
+            )
         )
 
     def test_step(self, model: nn.Module, batch: Dict[str, torch.Tensor], **kwargs) -> Dict[str, Any]:
