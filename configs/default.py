@@ -93,7 +93,7 @@ HOOKS = [
     dict(type="LRSchedulerHook", name="base", metric_name="", by_epoch=False),
 
     dict(type="ModelFreezeHook", modules=["layer0", "layer1", "layer2", "layer3", "layer4"],
-         train=False, unfreeze_epoch=1),
+         train=False, unfreeze_epoch=2),
     dict(type="NormalizationLockHook", train=False, requires_grad=None),
 
     dict(type="ModifiedPytorchDDPHook"),
