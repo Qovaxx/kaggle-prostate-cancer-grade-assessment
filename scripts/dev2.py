@@ -10,9 +10,11 @@ def show(image):
     plt.figure()
     plt.imshow(image)
     plt.show()
+import torch
 
+qwk = torch.tensor(float('nan'))
 
-
+torch.isnan(qwk)
 
 
 

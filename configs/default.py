@@ -20,7 +20,7 @@ DIST_PARAMS = dict(backend="nccl")
 DEVICE = "cuda"
 DEBUG = False
 DEBUG_TRAIN_SIZE = 20
-MAX_EPOCHS = 1
+MAX_EPOCHS = 999999
 
 
 # Data settings
@@ -69,10 +69,11 @@ TRANSFORMS = dict(
 __classes = len(CancerGradeSystem().isup_grades) - 1
 MODEL = dict(type="timm.models.senet.seresnext50_32x4d", pretrained=True, num_classes=__classes)
 
-OPTIMIZER = dict(type="torch.optim.SGD", lr=0.1, momentum=0.9, weight_decay=0.0005, dampening=0, nesterov=False)
+# OPTIMIZER = dict(type="torch.optim.SGD", lr=0.01, momentum=0.9, weight_decay=0.0005, dampening=0, nesterov=False)
+OPTIMIZER = dict(type="torch.optim.Adam", lr=0.1, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 
 SCHEDULER = dict(type="torch.optim.lr_scheduler.MultiStepLR", last_epoch=-1, gamma=0.1,
-                 milestones=[200, 1000, 10000, 30000, 50000])
+                 milestones=[400, 830, 5000, 10000, 30000, 50000])
 
 LOSSES = dict(bce_loss=dict(type="torch.nn.BCEWithLogitsLoss", reduction="mean", pos_weight=None))
 
@@ -80,7 +81,7 @@ METRICS = dict(qwk_metric=dict(type="src.psga.train.evaluation.metric.QuadraticW
                                labels=None, sample_weight=None),
                acc_metric=dict(type="src.psga.train.evaluation.metric.Accuracy"))
 
-BATCH_PROCESSOR = dict(val_batch=380) # DP 380 DDP 90 APEX 150
+BATCH_PROCESSOR = dict(val_batch=90) # DP 380 DDP 90 APEX 150
 
 
 # Hook settings
@@ -98,9 +99,9 @@ HOOKS = [
 
     dict(type="ModifiedPytorchDDPHook"),
     dict(type="OptimizerHook", name="base"),
-    # dict(type="ApexInitializeHook", opt_level="O1"),
-    # dict(type="ApexSyncBNHook"),
-    # dict(type="ApexDDPHook", delay_allreduce=True),
 
-    dict(type="EpochMetricHook", handle=dict(qwk="qwk_metric"))
+    dict(type="EpochMetricHook", handle=dict(qwk="qwk_metric")),
+    # dict(type="ModifiedResumeHook", checkpoint="/artifacts/default_fold0/epoch_1.pth",
+    #      resume_scheduler=False, resume_iter=False, resume_optimizer=False, strict=False, map_location="cpu",
+    #      ignore_loaded_keys=["product_layer"]),
 ]

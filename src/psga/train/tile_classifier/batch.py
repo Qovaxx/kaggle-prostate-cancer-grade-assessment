@@ -37,12 +37,13 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
         batch_targets = batch["target"].to(self._experiment.device)
 
         logits = model(batch_images)
-        loss = self.estimate("bce_loss", logits, batch_targets)
+        bce = self.estimate("bce_loss", logits, batch_targets)
         predictions = decode_ordinal_logits(logits)
         targets = decode_ordinal_targets(batch_targets)
 
         qwk = self.estimate("qwk_metric", predictions, targets)
         acc = self.estimate("acc_metric", predictions, targets)
+        loss = 0.6 * bce + 0.4 * (1 - qwk)
 
         # preds = dict(Counter(predictions.detach().cpu().numpy()))
         # y_true = dict(Counter(targets.detach().cpu().numpy()))
@@ -50,7 +51,7 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
 
         return dict(
             base_loss=loss,
-            values=dict(base_loss=loss.item(), batch_qwk=qwk.item(), acc=acc.item()),
+            values=dict(base_loss=loss.item(), bce=bce.item(), batch_qwk=qwk.item(), acc=acc.item()),
             num_samples=batch_targets.size(0),
             epoch_metric = dict(qwk=dict(items=batch_items, inputs=predictions, targets=targets))
         )
