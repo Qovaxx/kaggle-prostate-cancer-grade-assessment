@@ -13,7 +13,9 @@ from ..evaluation.functional import (
     decode_ordinal_targets
 )
 from ..utils import to_chunks
-# import numpy as np
+
+import numpy as np
+from collections import Counter
 # import matplotlib.pyplot as plt
 # def show(image):
 #     plt.figure()
@@ -42,6 +44,10 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
         qwk = self.estimate("qwk_metric", predictions, targets)
         acc = self.estimate("acc_metric", predictions, targets)
 
+        # preds = dict(Counter(predictions.detach().cpu().numpy()))
+        # y_true = dict(Counter(targets.detach().cpu().numpy()))
+        # print(f"preds{preds}, targets={y_true}")
+
         return dict(
             base_loss=loss,
             values=dict(base_loss=loss.item(), batch_qwk=qwk.item(), acc=acc.item()),
@@ -65,6 +71,10 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
         predictions = torch.cat(predictions)
         targets = decode_ordinal_targets(batch_targets)
         acc = self.estimate("acc_metric", predictions, targets)
+
+        # preds = dict(Counter(predictions.detach().cpu().numpy()))
+        # y_true = dict(Counter(targets.detach().cpu().numpy()))
+        # print(f"preds{preds}, targets={y_true}")
 
         return dict(
             values=dict(acc=acc.item()),
