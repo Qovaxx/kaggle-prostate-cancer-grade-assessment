@@ -11,24 +11,6 @@ def show(image):
     plt.imshow(image)
     plt.show()
 
-from collections import Counter, defaultdict
-from numpy.random import choice
-import random
-from typing import Iterable, List
-
-labels = [5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] + [10] * 30 + [332] * 2  + [111] * 11111
-# count = 20
-
-
-
-
-
-indices = balanced_subsample(labels, 20)
-print(Counter(np.array(labels)[indices]))
-
-
-
-a = 4
 
 
 

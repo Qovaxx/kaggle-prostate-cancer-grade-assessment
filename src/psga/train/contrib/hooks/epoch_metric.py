@@ -13,7 +13,6 @@ from ppln.runner import Runner
 from ppln.hooks.registry import HOOKS
 from ppln.hooks.base import BaseHook
 from ppln.hooks.priority import Priority
-from ppln.utils.misc import get_dist_info
 
 from ..utils.dist import all_gather_cpu
 
@@ -61,11 +60,9 @@ class EpochMetricHook(BaseHook):
                 inputs = inputs.index_select(self._inputs_dim, indices)
                 targets = targets.index_select(self._targets_dim, indices)
 
-                rank, _ = get_dist_info()
-                if rank == 0:
-                    func_name = self._handle[metric_name]
-                    metric = runner.batch_processor.estimate(func_name, inputs, targets)
-                    runner.log_buffer.output[metric_name] = metric.item()
+                func_name = self._handle[metric_name]
+                metric = runner.batch_processor.estimate(func_name, inputs, targets)
+                runner.log_buffer.output[metric_name] = metric.item()
 
     def _flat(self, data: List[Dict[str, torch.Tensor]], key: str, dim: int) -> torch.Tensor:
         tensor = torch.cat([batch[key] for batch in data], dim=dim)

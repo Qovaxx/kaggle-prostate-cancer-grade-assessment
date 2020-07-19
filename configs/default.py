@@ -37,9 +37,9 @@ DATA_LOADER = dict(
 )
 
 DATA = dict(
-    train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5,
-               micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True,
-               subsample_tiles_count=10, balance_subsample=True),
+    # train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5,
+    #            micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True,
+    #            subsample_tiles_count=10, balance_subsample=True),
 
     val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
              micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
@@ -96,7 +96,7 @@ HOOKS = [
          train=False, unfreeze_epoch=3),
     dict(type="NormalizationLockHook", train=False, requires_grad=None),
 
-    dict(type="ModifiedPytorchDPHook"),
+    dict(type="ModifiedPytorchDDPHook"),
     # dict(type="OptimizerHook", name="base"),
 
     dict(type="EpochMetricHook", handle=dict(qwk="qwk_metric"))
