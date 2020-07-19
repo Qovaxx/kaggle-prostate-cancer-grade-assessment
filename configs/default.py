@@ -31,7 +31,7 @@ __microns_tile_size=231
 
 DATA_LOADER = dict(
     batch_per_gpu=1,
-    train_workers_per_gpu=5,
+    train_workers_per_gpu=6,
     val_workers_per_gpu=2,
     pin_memory=False,
 )
