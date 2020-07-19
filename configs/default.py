@@ -31,7 +31,7 @@ __microns_tile_size=231
 
 DATA_LOADER = dict(
     batch_per_gpu=1,
-    train_workers_per_gpu=6,
+    train_workers_per_gpu=5,
     val_workers_per_gpu=2,
     pin_memory=False,
 )
@@ -39,7 +39,7 @@ DATA_LOADER = dict(
 DATA = dict(
     train=dict(type=__data_type, path=__psga_dirpath, phase="train", fold=__fold, tiles_intersection=0.5,
                micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.9, label_binning=True,
-               subsample_tiles_count=6, balance_subsample=True),
+               subsample_tiles_count=10, balance_subsample=True),
 
     val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
              micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
@@ -80,7 +80,7 @@ METRICS = dict(qwk_metric=dict(type="src.psga.train.evaluation.metric.QuadraticW
                                labels=None, sample_weight=None),
                acc_metric=dict(type="src.psga.train.evaluation.metric.Accuracy"))
 
-BATCH_PROCESSOR = dict(val_batch=150) # DP 380 DDP 90 APEX 150
+BATCH_PROCESSOR = dict(val_batch=380) # DP 380 DDP 90 APEX 150
 
 
 # Hook settings
@@ -93,14 +93,14 @@ HOOKS = [
     dict(type="LRSchedulerHook", name="base", metric_name="", by_epoch=False),
 
     dict(type="ModelFreezeHook", modules=["layer0", "layer1", "layer2", "layer3", "layer4"],
-         train=False, unfreeze_epoch=3),
+         train=False, unfreeze_epoch=1),
     dict(type="NormalizationLockHook", train=False, requires_grad=None),
 
-    # dict(type="ModifiedPytorchDDPHook"),
-    # dict(type="OptimizerHook", name="base"),
-    dict(type="ApexInitializeHook", opt_level="O1"),
-    dict(type="ApexSyncBNHook"),
-    dict(type="ApexDDPHook", delay_allreduce=True),
+    dict(type="ModifiedPytorchDDPHook"),
+    dict(type="OptimizerHook", name="base"),
+    # dict(type="ApexInitializeHook", opt_level="O1"),
+    # dict(type="ApexSyncBNHook"),
+    # dict(type="ApexDDPHook", delay_allreduce=True),
 
     dict(type="EpochMetricHook", handle=dict(qwk="qwk_metric"))
 ]
