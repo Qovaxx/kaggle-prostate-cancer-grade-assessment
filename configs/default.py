@@ -69,10 +69,10 @@ TRANSFORMS = dict(
 __classes = len(CancerGradeSystem().isup_grades) - 1
 MODEL = dict(type="timm.models.senet.seresnext50_32x4d", pretrained=True, num_classes=__classes)
 
-OPTIMIZER = dict(type="torch.optim.Adam", lr=0.1, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+OPTIMIZER = dict(type="torch.optim.Adam", lr=0.01, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 
 SCHEDULER = dict(type="torch.optim.lr_scheduler.MultiStepLR", last_epoch=-1, gamma=0.1,
-                 milestones=[400, 830, 5000, 10000, 30000, 50000])
+                 milestones=[800, 2000, 5000, 10000, 20000])
 
 LOSSES = dict(bce_loss=dict(type="torch.nn.BCEWithLogitsLoss", reduction="mean", pos_weight=None))
 
@@ -94,12 +94,19 @@ HOOKS = [
 
     dict(type="ModelFreezeHook", modules=["layer0", "layer1", "layer2", "layer3", "layer4"],
          train=False, unfreeze_epoch=2),
+    dict(type="ModelFreezeHook", modules=["layer0", "layer1", "layer2", "layer3"],
+         train=False, unfreeze_epoch=3),
+    dict(type="ModelFreezeHook", modules=["layer0", "layer1", "layer2"],
+         train=False, unfreeze_epoch=4),
+    dict(type="ModelFreezeHook", modules=["layer0", "layer1"],
+         train=False, unfreeze_epoch=5),
+    dict(type="ModelFreezeHook", modules=["layer0"],
+         train=False, unfreeze_epoch=6),
     dict(type="NormalizationLockHook", train=False, requires_grad=True),
 
     dict(type="ModifiedPytorchDDPHook"),
-    dict(type="OptimizerHook", name="base"), # max_norm=1
+    dict(type="OptimizerHook", name="base"),
 
     dict(type="EpochMetricHook", handle=dict(qwk="qwk_metric")),
-    # dict(type="ModifiedResumeHook", checkpoint="/artifacts/epoch_1s.pth",
-    #      resume_scheduler=False, resume_iter=False, resume_optimizer=False, strict=False, map_location="cpu")
+
 ]

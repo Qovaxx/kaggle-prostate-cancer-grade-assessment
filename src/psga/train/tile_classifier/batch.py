@@ -21,6 +21,7 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
     def __init__(self, *args, **kwargs) -> NoReturn:
         super().__init__(*args, **kwargs)
         self._val_batch = self._config.BATCH_PROCESSOR.val_batch
+        self._loss1 = CohenKappaLoss()
 
     def train_step(self, model: nn.Module, batch: Dict[str, torch.Tensor], **kwargs) -> Dict[str, Any]:
         batch_items = batch["item"]
@@ -31,6 +32,7 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
         bce = self.estimate("bce_loss", logits, batch_targets)
         predictions = decode_ordinal_logits(logits)
         targets = decode_ordinal_targets(batch_targets)
+        # loss1 = self._loss1(predictions, targets)
 
         qwk = self.estimate("qwk_metric", predictions, targets)
         acc = self.estimate("acc_metric", predictions, targets)
