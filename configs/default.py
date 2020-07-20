@@ -72,7 +72,7 @@ MODEL = dict(type="timm.models.senet.seresnext50_32x4d", pretrained=True, num_cl
 OPTIMIZER = dict(type="torch.optim.Adam", lr=0.01, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 
 SCHEDULER = dict(type="torch.optim.lr_scheduler.MultiStepLR", last_epoch=-1, gamma=0.1,
-                 milestones=[800, 2000, 5000, 10000, 20000])
+                 milestones=[800, 810, 820, 2000, 5000, 10000, 20000])
 
 LOSSES = dict(bce_loss=dict(type="torch.nn.BCEWithLogitsLoss", reduction="mean", pos_weight=None))
 
@@ -102,11 +102,11 @@ HOOKS = [
          train=False, unfreeze_epoch=5),
     dict(type="ModelFreezeHook", modules=["layer0"],
          train=False, unfreeze_epoch=6),
+
     dict(type="NormalizationLockHook", train=False, requires_grad=True),
 
     dict(type="ModifiedPytorchDDPHook"),
     dict(type="OptimizerHook", name="base"),
 
     dict(type="EpochMetricHook", handle=dict(qwk="qwk_metric")),
-
 ]
