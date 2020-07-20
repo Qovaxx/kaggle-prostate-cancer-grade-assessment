@@ -5,8 +5,8 @@ from src.psga.settings import (
     ARTIFACTS_DIRPATH,
     PROCESSED_DIRPATH,
     KAGGLE_DATASET_NAME,
-    OVERALL_MEAN,
-    OVERALL_STD
+    IMAGENET_MEAN,
+    IMAGENET_STD
 )
 
 # Experiment settings
@@ -49,7 +49,7 @@ DATA = dict(
 # Transforms settings
 __pre_transforms = []
 __post_transforms = [
-    dict(type="Normalize", mean=OVERALL_MEAN, std=OVERALL_STD,
+    dict(type="Normalize", mean=IMAGENET_MEAN, std=IMAGENET_STD,
          max_pixel_value=255.0, always_apply=True, p=1.0),
     dict(type="ToTensorV2")
 ]
@@ -72,7 +72,7 @@ MODEL = dict(type="timm.models.senet.seresnext50_32x4d", pretrained=True, num_cl
 OPTIMIZER = dict(type="torch.optim.Adam", lr=0.1, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
 
 SCHEDULER = dict(type="torch.optim.lr_scheduler.MultiStepLR", last_epoch=-1, gamma=0.1,
-                 milestones=[400, 830, 000, 10000, 30000, 50000])
+                 milestones=[400, 830, 5000, 10000, 30000, 50000])
 
 LOSSES = dict(bce_loss=dict(type="torch.nn.BCEWithLogitsLoss", reduction="mean", pos_weight=None))
 
@@ -94,7 +94,7 @@ HOOKS = [
 
     dict(type="ModelFreezeHook", modules=["layer0", "layer1", "layer2", "layer3", "layer4"],
          train=False, unfreeze_epoch=2),
-    # dict(type="NormalizationLockHook", train=False, requires_grad=None),
+    dict(type="NormalizationLockHook", train=False, requires_grad=True),
 
     dict(type="ModifiedPytorchDDPHook"),
     dict(type="OptimizerHook", name="base"), # max_norm=1
