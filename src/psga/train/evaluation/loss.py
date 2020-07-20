@@ -23,6 +23,5 @@ class CohenKappaLoss(nn.Module):
         self._scale = scale
 
     def forward(self, inputs: Tensor, targets: Tensor) -> Tensor:
-        inputs = torch.argmax(F.softmax(inputs, dim=1), dim=1)
         cohen_kappa = cohen_kappa_score(inputs, targets)
         return -torch.log(torch.sigmoid(self._scale * cohen_kappa))

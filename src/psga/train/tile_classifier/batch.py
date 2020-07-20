@@ -13,16 +13,7 @@ from ..evaluation.functional import (
     decode_ordinal_targets
 )
 from ..utils import to_chunks
-
-import numpy as np
-from collections import Counter
-# import matplotlib.pyplot as plt
-# def show(image):
-#     plt.figure()
-#     image = image * np.array([32.75003156, 59.0587483, 40.4596739]) + np.array([236.71301302, 217.72548731, 229.42839042])
-#     plt.imshow(image)
-#     plt.show()
-# viz = np.moveaxis(batch_images.cpu().numpy(), 1, -1)
+from ..evaluation.loss import CohenKappaLoss
 
 
 class TileClassifierBatchProcessor(BaseBatchProcessor):
@@ -44,10 +35,6 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
         qwk = self.estimate("qwk_metric", predictions, targets)
         acc = self.estimate("acc_metric", predictions, targets)
         loss = 0.6 * bce + 0.4 * (1 - qwk)
-
-        # preds = dict(Counter(predictions.detach().cpu().numpy()))
-        # y_true = dict(Counter(targets.detach().cpu().numpy()))
-        # print(f"preds{preds}, targets={y_true}")
 
         return dict(
             base_loss=loss,
@@ -72,10 +59,6 @@ class TileClassifierBatchProcessor(BaseBatchProcessor):
         predictions = torch.cat(predictions)
         targets = decode_ordinal_targets(batch_targets)
         acc = self.estimate("acc_metric", predictions, targets)
-
-        # preds = dict(Counter(predictions.detach().cpu().numpy()))
-        # y_true = dict(Counter(targets.detach().cpu().numpy()))
-        # print(f"preds{preds}, targets={y_true}")
 
         return dict(
             values=dict(acc=acc.item()),
