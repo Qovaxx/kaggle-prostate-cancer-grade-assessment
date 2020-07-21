@@ -20,7 +20,7 @@ DIST_PARAMS = dict(backend="nccl")
 DEVICE = "cuda"
 DEBUG = False
 DEBUG_TRAIN_SIZE = 20
-MAX_EPOCHS = 999999
+MAX_EPOCHS = 17
 
 
 # Data settings
@@ -32,7 +32,7 @@ __microns_tile_size=231
 DATA_LOADER = dict(
     batch_per_gpu=1,
     train_workers_per_gpu=5,
-    val_workers_per_gpu=2,
+    val_workers_per_gpu=0,
     pin_memory=False,
 )
 
@@ -43,7 +43,6 @@ DATA = dict(
 
     val=dict(type=__data_type, path=__psga_dirpath, phase="val", fold=__fold, tiles_intersection=0.0,
              micron_tile_size=__microns_tile_size, crop_emptiness_degree=0.95, label_binning=True),
-
 )
 
 # Transforms settings
@@ -80,7 +79,7 @@ METRICS = dict(qwk_metric=dict(type="src.psga.train.evaluation.metric.QuadraticW
                                labels=None, sample_weight=None),
                acc_metric=dict(type="src.psga.train.evaluation.metric.Accuracy"))
 
-BATCH_PROCESSOR = dict(val_batch=40) # DP 380 DDP 80 APEX 150
+BATCH_PROCESSOR = dict(val_batch=40) # DP 380 DDP 40 APEX 100
 
 
 # Hook settings
