@@ -13,12 +13,6 @@ from .entity import (
     CV2Rectangle
 )
 
-import matplotlib.pyplot as plt
-def show(image):
-    plt.figure()
-    plt.imshow(image)
-    plt.show()
-
 
 def crop_external_background(image: np.ndarray, bbox: Optional[BBox] = None,
                              background_value: int = 255) -> Tuple[np.ndarray, BBox]:

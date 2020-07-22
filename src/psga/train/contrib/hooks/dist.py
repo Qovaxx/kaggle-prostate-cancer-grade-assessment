@@ -13,31 +13,31 @@ from ..utils.data_parallel import BalancedDataParallel
 @HOOKS.register_module
 class ModifiedBaseDistClosureHook(BaseClosureHook):
 
-	@property
-	def priority(self) -> Priority:
-		return Priority.NORMAL
+    @property
+    def priority(self) -> Priority:
+        return Priority.NORMAL
 
-	def before_run(self, runner) -> NoReturn:
-		model_device = next(runner.model.parameters()).device
-		if model_device != torch.device("cpu"):
-			runner.model = self.func(runner.model)
+    def before_run(self, runner) -> NoReturn:
+        model_device = next(runner.model.parameters()).device
+        if model_device != torch.device("cpu"):
+            runner.model = self.func(runner.model)
 
 
 @HOOKS.register_module
 class ModifiedPytorchDPHook(ModifiedBaseDistClosureHook):
 
-	def __init__(self, **kwargs) -> NoReturn:
-		super().__init__(DataParallel, **kwargs)
+    def __init__(self, **kwargs) -> NoReturn:
+        super().__init__(DataParallel, **kwargs)
 
 
 @HOOKS.register_module
 class ModifiedPytorchBDPHook(ModifiedBaseDistClosureHook):
 
-	def __init__(self, **kwargs) -> NoReturn:
-		super().__init__(BalancedDataParallel, **kwargs)
+    def __init__(self, **kwargs) -> NoReturn:
+        super().__init__(BalancedDataParallel, **kwargs)
 
 
 @HOOKS.register_module
 class ModifiedPytorchDDPHook(ModifiedBaseDistClosureHook):
-	def __init__(self, **kwargs):
-		super().__init__(make_pytorch_ddp, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(make_pytorch_ddp, **kwargs)

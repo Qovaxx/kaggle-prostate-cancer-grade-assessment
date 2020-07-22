@@ -1,9 +1,9 @@
 import collections
 from typing import (
-	Any,
-	Dict,
+    Any,
+    Dict,
     NoReturn,
-	List
+    List
 )
 
 from torch.utils.data.dataloader import default_collate
