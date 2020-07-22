@@ -79,7 +79,7 @@ METRICS = dict(qwk_metric=dict(type="src.psga.train.evaluation.metric.QuadraticW
                                labels=None, sample_weight=None),
                acc_metric=dict(type="src.psga.train.evaluation.metric.Accuracy"))
 
-BATCH_PROCESSOR = dict(val_batch=40) # DP 380 DDP 40 APEX 100
+BATCH_PROCESSOR = dict(val_batch=40)
 
 
 # Hook settings
