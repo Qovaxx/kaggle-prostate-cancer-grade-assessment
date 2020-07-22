@@ -8,7 +8,6 @@ services:
       context: ${PWD}
       dockerfile: ${DOCKERFILE_PATH}
       args:
-        - PROXY=192.168.234.6:3128
         - DEBIAN_FRONTEND=noninteractive
         - PROJECT_DIRPATH=${CONTAINER_PROJECT_DIRPATH}
         - DOCKER_USER_NAME=${DOCKER_USER_NAME}

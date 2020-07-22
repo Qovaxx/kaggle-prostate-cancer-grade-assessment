@@ -1,4 +1,4 @@
-from src.psga.data_source.writer import TIFFWriter
+from src.psga.data_source.write import TIFFWriter
 from src.psga.data_source.provider.kaggle import PSGADataAdapter
 from src.psga.settings import (
     RAW_DIRPATH,

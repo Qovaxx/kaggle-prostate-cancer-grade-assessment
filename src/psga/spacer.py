@@ -16,11 +16,11 @@ class SpaceConverter(object):
     def __init__(self, cm_resolution: float) -> NoReturn:
         self._pixel_spacing = 1 / (float(cm_resolution) / MICRONS_PER_CM)
 
-    def _apply(self, input: SIZE_TYPE, func: Callable[[SIZE_TYPE], SIZE_TYPE]) -> SIZE_TYPE:
-        if isinstance(input, int):
-            return func(input)
+    def _apply(self, inputs: SIZE_TYPE, func: Callable[[SIZE_TYPE], SIZE_TYPE]) -> SIZE_TYPE:
+        if isinstance(inputs, int):
+            return func(inputs)
         else:
-            return (func(input[0]), func(input[1]))
+            return (func(inputs[0]), func(inputs[1]))
 
     def pixels_to_microns(self, pixels_size: SIZE_TYPE) -> SIZE_TYPE:
         to_microns = lambda x: round(self._pixel_spacing * (x - 1))
