@@ -45,8 +45,9 @@ port-forwarding-to: ## Up and down a direct tunnel to the docker container
 	 	--command=$(command)
 
 pipeline:
-#	python ./scripts/convert_data.py
+	python ./scripts/convert_data.py
 	bash ./tools/train.sh \
 		--config-path=./configs/default.py \
 		--cuda-visible-devices=0,1,2,3 \
 		--is-distributed=true
+
