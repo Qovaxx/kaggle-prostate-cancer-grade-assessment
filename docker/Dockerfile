@@ -2,27 +2,6 @@ FROM gcr.io/kaggle-gpu-images/python@sha256:36a3a467ee49c0ca0e8b3271288c67ca1fdc
 MAINTAINER "Qovaxx"
 ARG DEBIAN_FRONTEND
 
-# TODO: remove auto competition and x5 directory
-# Set proxy settings for x5 intranet
-ARG PROXY
-ENV HTTP_PROXY=http://${PROXY}
-ENV HTTPS_PROXY=http://${PROXY}
-ENV FTP_PROXY=http://${PROXY}
-COPY ./x5/proxy.conf /etc/apt/apt.conf.d/proxy.conf
-
-# TODO: remove auto competition and x5 directory
-# Set ssl certificates for x5
-COPY ./x5/x5.crt /usr/local/share/ca-certificates/x5.crt
-COPY ./x5/x5_ca.crt /usr/local/share/ca-certificates/x5_ca.crt
-ENV PIP_CERT=/etc/ssl/certs/ca-certificates.crt
-ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-
-# TODO: remove auto competition and x5 directory
-RUN apt-get update && \
-    apt-get install -y ca-certificates && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-    update-ca-certificates
 
 # Install nvidia apex
 RUN git clone https://github.com/NVIDIA/apex && \
